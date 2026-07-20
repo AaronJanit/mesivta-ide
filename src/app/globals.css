@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* ===== Dark-first theme tokens (no light :root bleed — see tailwind-shadcn-dark-default.md) ===== */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --background: 240 10% 4%;          /* #0a0a0f app bg */
+  --panel: 240 8% 7%;                /* #121215 sidebar/panel bg */
+  --panel-2: 240 8% 10%;             /* #1b1b1f active/row hover */
+  --border: 220 10% 18%;            /* #2a2d33 subtle dividers */
+  --border-strong: 220 10% 26%;
+
+  /* Text */
+  --foreground: 210 20% 92%;        /* #e6e9ef main */
+  --muted: 220 10% 64%;             /* #9aa0aa secondary */
+  --muted-2: 220 10% 48%;           /* #6b7280 tertiary */
+
+  /* Accent */
+  --accent: 199 80% 50%;            /* #00b3ff cyan */
+  --accent-fg: 240 10% 4%;
+  --accent-soft: 199 80% 50% / 0.12;
+
+  /* Status */
+  --danger: 0 70% 56%;
+  --warning: 38 92% 56%;
+  --success: 142 56% 56%;
+
+  /* Editor */
+  --editor-bg: 240 10% 5%;
+  --gutter: 240 8% 12%;
+
+  /* Shadows tuned for dark surfaces */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.45);
+  --shadow-pop: 0 12px 28px -4px rgb(0 0 0 / 0.55);
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-panel: hsl(var(--panel));
+  --color-panel-2: hsl(var(--panel-2));
+  --color-border: hsl(var(--border));
+  --color-border-strong: hsl(var(--border-strong));
+  --color-muted: hsl(var(--muted));
+  --color-muted-2: hsl(var(--muted-2));
+  --color-accent: hsl(var(--accent));
+  --color-accent-soft: hsl(var(--accent-soft));
+  --color-danger: hsl(var(--danger));
+  --color-warning: hsl(var(--warning));
+  --color-success: hsl(var(--success));
+  --color-editor: hsl(var(--editor-bg));
+  --color-gutter: hsl(var(--gutter));
+
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: calc(1 / 0.75);
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: calc(1.25 / 0.8125);
+  --text-base: 0.875rem;
+  --text-base--line-height: calc(1.35 / 0.875);
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Thin VS Code-style scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: hsl(220 10% 26%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover { background: hsl(220 10% 36%); background-clip: padding-box; }
+*::-webkit-scrollbar-corner { background: transparent; }
+
+/* Selection */
+::selection { background: hsl(var(--accent) / 0.3); }
+
+/* Focus ring */
+:focus-visible {
+  outline: 1.5px solid hsl(var(--accent));
+  outline-offset: -1px;
+}
+
+/* highlight.js theme — minimal dark, tuned to match */
+.hljs { background: transparent; color: hsl(var(--foreground)); }
+.hljs-comment, .hljs-quote { color: hsl(220 10% 48%); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-type { color: #c586c0; }
+.hljs-string, .hljs-attr, .hljs-template-tag, .hljs-template-variable { color: #ce9178; }
+.hljs-number, .hljs-literal, .hljs-boolean, .hljs-bullet { color: #b5cea8; }
+.hljs-title, .hljs-section, .hljs-function .hljs-title { color: #4ec9b0; }
+.hljs-variable, .hljs-name, .hljs-property { color: #9cdcfe; }
+.hljs-tag { color: #569cd6; }
+.hljs-built_in, .hljs-class .hljs-title { color: #4ec9b0; }
+.hljs-meta { color: hsl(220 10% 48%); }
+.hljs-operator, .hljs-punctuation { color: hsl(210 16% 82%); }
+.hljs-deletion { color: #f48771; background: hsl(0 70% 40% / 0.15); }
+.hljs-addition { color: #89d185; background: hsl(142 56% 40% / 0.15); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
