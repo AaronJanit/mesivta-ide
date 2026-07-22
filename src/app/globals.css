@@ -36,6 +36,42 @@
   --shadow-pop: 0 12px 28px -4px rgb(0 0 0 / 0.55);
 }
 
+/* ===== Light theme overrides (activated via .light on <html>) ===== */
+:root.light {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: 0 0% 100%;          /* #ffffff app bg */
+  --panel: 220 20% 98%;             /* #f5f7fa sidebar/panel bg */
+  --panel-2: 220 16% 94%;           /* #e7ebf1 active/row hover */
+  --border: 220 14% 88%;            /* #d6dbe3 subtle dividers */
+  --border-strong: 220 14% 78%;
+
+  /* Text */
+  --foreground: 222 22% 16%;        /* #20283a main */
+  --muted: 220 10% 40%;             /* #5e6675 secondary */
+  --muted-2: 220 10% 55%;           /* #838ba0 tertiary */
+
+  /* Accent kept — cyan reads on light too */
+  --accent: 199 80% 45%;
+  --accent-fg: 0 0% 100%;
+  --accent-soft: 199 80% 45% / 0.14;
+
+  /* Status */
+  --danger: 0 70% 48%;
+  --warning: 38 92% 48%;
+  --success: 142 56% 40%;
+
+  /* Editor */
+  --editor-bg: 0 0% 100%;
+  --gutter: 220 20% 96%;
+
+  /* Shadows softer on light surfaces */
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.08);
+  --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.10);
+  --shadow-pop: 0 12px 28px -4px rgb(15 23 42 / 0.16);
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

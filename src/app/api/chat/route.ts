@@ -12,11 +12,20 @@ const cerebras = new OpenAI({
   baseURL: "https://api.cerebras.ai/v1",
 });
 
+interface ActiveFileContext {
+  name: string;
+  path: string;
+  language: string;
+  content: string;
+}
+
 interface Body {
   chatId: string;
   projectId: string;
   content: string;
   history?: { role: "user" | "assistant" | "system"; content: string }[];
+  activeFile?: ActiveFileContext | null;
+  openTabs?: ActiveFileContext[];
 }
 
 export async function POST(req: Request) {
@@ -36,7 +45,9 @@ export async function POST(req: Request) {
   // 1. Persist the user's message.
   await createMessage(sess.userId, body.chatId, "user", body.content).catch(() => {});
 
-  // 2. Build project context: file tree paths (no contents — cheap) + active file content.
+  // 2. Build project context: file tree paths + contents of the active file and open tabs.
+  // The client sends the active file + open tabs (with content) it already has loaded —
+  // we trust it because it came from an authenticated session and is the user's own project.
   let contextBlock = "";
   try {
     const tree = await listFiles(sess.userId, body.projectId);
@@ -49,9 +60,32 @@ export async function POST(req: Request) {
       }
     };
     walk(tree, "");
-    contextBlock = paths.length
-      ? `\n\n## Current project file tree\n\`\`\`\n${paths.join("\n")}\n\`\`\``
+    const treeBlock = paths.length
+      ? `\n\n## Current project file tree\n\`\`\`\`\n${paths.join("\n")}\n\`\`\`\``
       : "\n\n## Current project\n(empty — no files yet)";
+
+    const fileSections: string[] = [];
+    const MAX_FILE_BYTES = 12_000; // per-file cap to keep prompt bounded
+    const trim = (s: string) =>
+      s.length > MAX_FILE_BYTES ? `${s.slice(0, MAX_FILE_BYTES)}\n\n/* …truncated (${s.length - MAX_FILE_BYTES} more bytes)… */` : s;
+
+    const seenPaths = new Set<string>();
+    const addFile = (f: ActiveFileContext, isActive: boolean) => {
+      if (!f || !f.path || seenPaths.has(f.path)) return;
+      seenPaths.add(f.path);
+      const lang = f.language || "";
+      const tag = isActive ? "ACTIVE FILE" : "OPEN TAB";
+      fileSections.push(
+        `\n\n## ${tag}: ${f.path}\n\`\`\`${lang}\n${trim(f.content ?? "")}\n\`\`\``,
+      );
+    };
+
+    if (body.activeFile) addFile(body.activeFile, true);
+    if (Array.isArray(body.openTabs)) {
+      for (const t of body.openTabs) addFile(t, false);
+    }
+
+    contextBlock = `${treeBlock}${fileSections.join("")}`;
   } catch {
     contextBlock = "";
   }
@@ -60,7 +94,9 @@ export async function POST(req: Request) {
 Use Markdown for all responses: headings, **bold**, *italic*, bullet/numbered lists, tables, blockquotes, fenced code blocks with language tags, and inline \`code\`.
 When you suggest code, ALWAYS put it in a fenced code block with the correct language tag (e.g. \`\`\`ts, \`\`\`python, \`\`\`css).
 Do NOT attempt to edit files directly — you cannot. Provide code the user can read and copy manually.
-Keep answers focused and skippable. No filler.${contextBlock}`;
+Keep answers focused and skippable. No filler.
+
+IMPORTANT: The user is editing files in this IDE. The context below includes the CURRENTLY ACTIVE FILE (the one the user is looking at) and any other OPEN TABS with their full contents. When the user asks about "this file", "my code", "the function", "why doesn't it work", etc., they are almost always referring to the ACTIVE FILE or one of the OPEN TABS. Read those contents before answering — ground your answer in the actual code shown. Quote relevant lines by line number or snippet when helpful.${contextBlock}`;
 
   // 3. Compose messages for Cerebras: system + history (last ~20) + new user msg.
   const history = (body.history ?? []).slice(-20);

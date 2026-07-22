@@ -47,7 +47,7 @@ export default function LoginPage() {
             Mesivta IDE
           </span>
           <span className="mt-2 text-sm font-medium uppercase tracking-[0.25em] text-muted">
-            Coding Club
+            2026-7 Coding Club
           </span>
         </div>
       </div>

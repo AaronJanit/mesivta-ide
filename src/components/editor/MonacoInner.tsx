@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Editor, type OnMount } from "@monaco-editor/react";
 import type * as MonacoNS from "monaco-editor";
+import { useEditorBridge } from "@/lib/editorBridge";
 
 interface MonacoInnerProps {
   fileId: string;
@@ -15,11 +16,13 @@ let modelsRef: { current: Record<string, MonacoNS.editor.ITextModel | null> } = 
 let monacoRef: typeof MonacoNS | null = null;
 
 export function MonacoInner({ fileId, value, language, onChange }: MonacoInnerProps) {
+  const setEditor = useEditorBridge((s) => s.setEditor);
   const editorRef = useRef<MonacoNS.editor.IStandaloneCodeEditor | null>(null);
 
   const onMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     monacoRef = monaco;
+    setEditor(editor);
     // Define a dark theme matching the app
     monaco.editor.defineTheme("ide-dark", {
       base: "vs-dark",
@@ -54,6 +57,10 @@ export function MonacoInner({ fileId, value, language, onChange }: MonacoInnerPr
     editor.setModel(model);
     editor.focus();
   }, [fileId, value, language]);
+
+  useEffect(() => {
+    return () => setEditor(null);
+  }, []);
 
   return (
     <Editor

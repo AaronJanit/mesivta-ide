@@ -8,32 +8,24 @@ interface StreamOptions {
   onError?: (err: string) => void;
 }
 
-export interface ActiveFileContext {
-  name: string;
-  path: string;
+interface ExplainArgs {
   language: string;
-  content: string;
-}
-
-interface SendArgs {
-  chatId: string;
-  projectId: string;
-  content: string;
-  history: { role: "user" | "assistant" | "system"; content: string }[];
-  activeFile?: ActiveFileContext | null;
-  openTabs?: ActiveFileContext[];
+  filePath: string;
+  message: string;
+  excerpt?: string;
+  snippet?: string;
 }
 
 /**
- * Streams an AI chat response from /api/chat (SSE). Accumulates delta content
- * and reports it to onDelta with requestAnimationFrame-throttled updates so
- * Markdown re-render doesn't run per byte.
+ * Streams an educational explanation from /api/debug/explain (SSE) using the
+ * Ollama Cloud model `glm-5.2:cloud`. Mirrors useStreamChat's flush cadence
+ * so Markdown re-render doesn't run per byte.
  */
-export function useStreamChat() {
+export function useExplainStream() {
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const send = useCallback(async (args: SendArgs, opts: StreamOptions) => {
+  const send = useCallback(async (args: ExplainArgs, opts: StreamOptions) => {
     setStreaming(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -59,7 +51,7 @@ export function useStreamChat() {
     };
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/debug/explain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(args),
@@ -91,12 +83,13 @@ export function useStreamChat() {
               full += json.delta;
               schedule();
             }
-          } catch {
-            // ignore parse hiccups mid-stream
+          } catch (e) {
+            if ((e as Error).message && !(e as Error).message.includes("JSON")) {
+              throw e;
+            }
           }
         }
       }
-      // final flush
       if (rafId !== null) {
         clearTimeout(rafId);
         rafId = null;
@@ -104,22 +97,19 @@ export function useStreamChat() {
       flush();
       opts.onDone(full);
     } catch (err) {
-      if ((err as Error).name === "AbortError") {
-        opts.onDone(full);
-      } else {
-        const msg = (err as Error).message;
-        opts.onError?.(msg);
-        opts.onDone(full || `⚠️ ${msg}`);
-      }
+      const msg = (err as Error).message ?? "Explain failed";
+      opts.onError?.(msg);
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
   }, []);
 
-  const abort = useCallback(() => {
+  const stop = useCallback(() => {
     abortRef.current?.abort();
+    abortRef.current = null;
+    setStreaming(false);
   }, []);
 
-  return { streaming, send, abort };
+  return { streaming, send, stop };
 }

@@ -6,24 +6,62 @@ import { useChatStore } from "@/stores/useChatStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useFileStore } from "@/stores/useFileStore";
-import { useStreamChat } from "@/hooks/useStreamChat";
-import { api } from "@/lib/api/client";
+import { useStreamChat, type ActiveFileContext } from "@/hooks/useStreamChat";
+import type { FileDTO } from "@/lib/api/client";
 import { Markdown } from "./Markdown";
+
+/** Build a map of fileId -> slash-separated path by walking parent_folder_id. */
+function buildPathMap(tree: FileDTO[]): Map<string, string> {
+  const idToNode = new Map<string, FileDTO>();
+  const collect = (nodes: FileDTO[]) => {
+    for (const n of nodes) {
+      idToNode.set(n.id, n);
+      if (n.children) collect(n.children);
+    }
+  };
+  collect(tree);
+  const memo = new Map<string, string>();
+  const pathOf = (id: string): string => {
+    if (memo.has(id)) return memo.get(id)!;
+    const node = idToNode.get(id);
+    if (!node) return "";
+    const parentPath = node.parent_folder_id ? pathOf(node.parent_folder_id) : "";
+    const p = parentPath ? `${parentPath}/${node.name}` : node.name;
+    memo.set(id, p);
+    return p;
+  };
+  for (const id of idToNode.keys()) pathOf(id);
+  return memo;
+}
 
 export function AssistantPanel() {
   const current = useProjectStore((s) => s.current);
   const { chats, activeChatId, messages, loadChats, selectChat, createChat, deleteChat, appendMessage, appendAssistantStreaming, finalizeStreaming } =
     useChatStore();
   const { streaming, send, abort } = useStreamChat();
+  const tabs = useEditorStore((s) => s.tabs);
+  const activeFileId = useEditorStore((s) => s.activeFileId);
+  const tree = useFileStore((s) => s.tree);
   const [input, setInput] = useState("");
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Whether the user is currently pinned to the bottom of the messages list.
+  // We only auto-scroll on new content if they're already at the bottom; if
+  // they've scrolled up to read, we leave their scroll position alone.
+  const stickToBottomRef = useRef(true);
 
-  // auto-scroll to bottom on new messages
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  };
+
+  // auto-scroll to bottom only when the user is already pinned there
   useEffect(() => {
-    if (scrollRef.current) {
+    if (stickToBottomRef.current && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
@@ -41,6 +79,8 @@ export function AssistantPanel() {
     if (!content || !current || !activeChatId || sending) return;
     setInput("");
     setSending(true);
+    // Sending a new message: jump to the bottom so the user sees the response.
+    stickToBottomRef.current = true;
 
     // optimistic: show user msg immediately
     appendMessage({
@@ -56,8 +96,24 @@ export function AssistantPanel() {
       .filter((m) => !m.id.startsWith("local-"))
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
+    // Build file context from editor tabs so the AI sees actual file contents.
+    const pathMap = buildPathMap(tree);
+    const toCtx = (t: { fileId: string; name: string; content: string; language: string }): ActiveFileContext => ({
+      name: t.name,
+      path: pathMap.get(t.fileId) ?? t.name,
+      language: t.language,
+      content: t.content,
+    });
+    const activeTab = tabs.find((t) => t.fileId === activeFileId) ?? null;
+    const activeFile = activeTab ? toCtx(activeTab) : null;
+    // Send open tabs (excluding the active one to avoid duplication).
+    const openTabs = tabs
+      .filter((t) => t.fileId !== activeFileId)
+      .map(toCtx)
+      .slice(0, 5);
+
     await send(
-      { chatId: activeChatId, projectId: current.id, content, history },
+      { chatId: activeChatId, projectId: current.id, content, history, activeFile, openTabs },
       {
         onDelta: (full) => appendAssistantStreaming(activeChatId, full),
         onDone: (_full) => {
@@ -124,7 +180,7 @@ export function AssistantPanel() {
       )}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-auto px-3 py-3">
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-auto px-3 py-3">
         {messages.length === 0 ? (
           <div className="px-1 py-8 text-center text-xs text-muted-2">
             Ask anything about your project.
