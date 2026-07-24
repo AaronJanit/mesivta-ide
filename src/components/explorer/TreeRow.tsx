@@ -1,9 +1,11 @@
 "use client";
 
 import { ChevronRight, ChevronDown, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { iconForFile } from "@/lib/fileIcons";
 import { languageForFile } from "@/lib/languages";
 import { useEditorStore } from "@/stores/useEditorStore";
+import { useDebugStore, buildIssueCountByFile } from "@/stores/useDebugStore";
 import type { FileDTO } from "@/lib/api/client";
 
 const ICONS = {
@@ -27,6 +29,7 @@ export function TreeRow({ node, tree, style, dragHandle }: TreeRowProps) {
   const open = useEditorStore((s) => s.open);
   const activeFileId = useEditorStore((s) => s.activeFileId);
   const tabs = useEditorStore((s) => s.tabs);
+  const countsByFile = useDebugStore(useShallow(buildIssueCountByFile));
 
   // react-arborist's NodeApi wraps the raw data on `node.data`.
   const data = (node.data ?? {}) as FileDTO;
@@ -35,6 +38,7 @@ export function TreeRow({ node, tree, style, dragHandle }: TreeRowProps) {
   const isOpen = node.isOpen;
   const tab = tabs.find((t) => t.fileId === data.id);
   const dirty = tab?.dirty ?? false;
+  const bugCount = isFolder ? 0 : (countsByFile[data.id] ?? 0);
 
   const iconSpec = iconForFile(data.name);
   const Icon = ICONS[iconSpec.icon];
@@ -70,6 +74,14 @@ export function TreeRow({ node, tree, style, dragHandle }: TreeRowProps) {
       </span>
       <Icon className={`size-3.5 shrink-0 ${iconSpec.color ?? "text-muted"}`} />
       <span className="flex-1 truncate">{data.name}</span>
+      {bugCount > 0 && (
+        <span
+          className="shrink-0 rounded bg-danger/15 px-1 py-px text-[10px] font-medium leading-none text-danger"
+          title={`${bugCount} ${bugCount === 1 ? "bug" : "bugs"} found — open the Visual Code Debugger`}
+        >
+          {bugCount} bug{bugCount === 1 ? "" : "s"}
+        </span>
+      )}
       {dirty && <span className="size-1.5 shrink-0 rounded-full bg-accent" title="Unsaved" />}
     </div>
   );

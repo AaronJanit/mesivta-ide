@@ -66,6 +66,17 @@ const cases = [
     expect: /Unterminated attribute value.*missing closing " after href/,
     expectCount: 1, // fatal-bail should suppress cascading unclosed-tag noise
   },
+  {
+    label: "stray quote after unquoted value (href=sbtyle.css\")",
+    tree: [mk("index.html", '<link rel="stysheet" href=sbtyle.css">')],
+    expect: /Unquoted attribute value contains '"'/,
+    expectCount: 1,
+  },
+  {
+    label: "valid unquoted value (href=x.css)",
+    tree: [mk("index.html", '<link rel="stylesheet" href=x.css>')],
+    expect: null,
+  },
 ];
 
 let pass = 0;

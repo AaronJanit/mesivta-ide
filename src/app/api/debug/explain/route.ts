@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   const excerpt = body.excerpt ?? "";
   const snippet = body.snippet ?? "";
 
-  const userPrompt = `Explain this syntax error clearly and in an educational manner: ${body.message}
+  const userPrompt = `Explain this syntax error clearly and simply: ${body.message}
 
 File: ${filePath}
 Language: ${language}
@@ -57,13 +57,7 @@ ${excerpt ? `Offending line:\n\`\`\`\n${excerpt}\n\`\`\`\n` : ""}${snippet ? `Co
 
 Explain WHY this is a syntax error (the underlying rule being violated), and how the user can identify and fix it themselves. Do NOT just give the corrected line — teach the concept so the user learns.`;
 
-  const systemPrompt = `You are a patient programming teacher embedded in a browser IDE's debugger panel.
-A learner has a syntax error in their ${language} file. Explain the error clearly and educationally:
-- State which rule of ${language} syntax is being violated.
-- Show the small mental model the learner should have (e.g. "every opening brace needs a matching close").
-- Point out the exact spot in the snippet that triggers it.
-- Guide the learner toward fixing it themselves — describe the fix in words, do NOT paste the corrected code.
-Use Markdown. Keep it under ~200 words.`;
+  const systemPrompt = `You are a helpful programming assistant in a browser IDE's debugger panel. A learner has a syntax error in their ${language} file. Explain what went wrong in simple, everyday language using just 2–3 short sentences. Briefly say what the error means, point to where it happens in the code, and describe how to fix it in words. Do not include corrected code or technical jargon unless it's necessary. Use Markdown.`;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({

@@ -60,3 +60,23 @@ export const useDebugStore = create<DebugState>((set) => ({
 
 /** Number of issues in the current scan, or 0 if none/not scanned. */
 export const selectIssueCount = (s: DebugState): number => s.result?.issues.length ?? 0;
+
+/**
+ * Map of fileId -> issue count, built from the current scan result.
+ * Used by the file explorer to render per-file bug badges.
+ *
+ * NOTE: This builds a fresh object on each call, so it MUST be consumed with
+ * `useShallow` (from `zustand/react/shallow`) to keep the snapshot stable
+ * and avoid a `useSyncExternalStore` infinite loop:
+ *   useDebugStore(useShallow(buildIssueCountByFile))
+ */
+const EMPTY_COUNTS: Record<string, number> = {};
+
+export function buildIssueCountByFile(s: DebugState): Record<string, number> {
+  if (!s.result || s.result.issues.length === 0) return EMPTY_COUNTS;
+  const map: Record<string, number> = {};
+  for (const issue of s.result.issues) {
+    map[issue.fileId] = (map[issue.fileId] ?? 0) + 1;
+  }
+  return map;
+}

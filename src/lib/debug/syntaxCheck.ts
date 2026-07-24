@@ -418,8 +418,38 @@ function checkHtmlStructure(
           }
           continue;
         } else {
-          // Unquoted value — read until whitespace, `>`, or EOF.
-          while (i < len && !/[ \t\r\n\f>]/.test(src[i])) advance();
+          // Unquoted value — read until whitespace, `>`, or a character that
+          // is forbidden in unquoted attribute values per the HTML spec
+          // (`"`, `'`, `` ` ``, `<`, `=`, `>`). A stray quote here means the
+          // user forgot to quote the value (e.g. `href=style.css"`) — report
+          // it instead of silently swallowing the quote into the value.
+          const valueStart = at();
+          const valueStartOff = i;
+          let bad: string | null = null;
+          while (i < len) {
+            const c = src[i];
+            if (/[ \t\r\n\f]/.test(c) || c === ">") break;
+            if (c === '"' || c === "'" || c === "`" || c === "<" || c === "=") {
+              bad = c;
+              break;
+            }
+            advance();
+          }
+          if (bad !== null) {
+            issues.push(
+              makeIssue(
+                fileId, path, name, "html", rawContent,
+                valueStart.line, valueStart.col,
+                `Unquoted attribute value contains '${bad}' — unquoted values cannot contain quotes, backticks, '<', or '='. Wrap the value in quotes: ${attrName}="${src.slice(valueStartOff, i)}"`,
+              ),
+            );
+            // Don't consume the offending char; let the attr loop re-parse it
+            // (a stray `"` will trigger the "attribute name expected" path,
+            // a `>` will close the tag). Fatal to avoid cascade noise.
+            fatal = true;
+            closedTag = true;
+            break;
+          }
           continue;
         }
       }

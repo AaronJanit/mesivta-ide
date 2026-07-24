@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { useDebugStore, type ScanResult } from "@/stores/useDebugStore";
@@ -10,27 +10,36 @@ import { useDebugStore, type ScanResult } from "@/stores/useDebugStore";
  * regardless of whether the DebugPanel is mounted. This drives the pulsing
  * red badge on the Debug activity-bar icon.
  *
- * Re-scans when the project changes or the file tree changes (if auto-rescan
- * is on). setState happens inside the async fetch (after `await`), never
- * synchronously in the effect body.
+ * - When "Auto-rescan on change" is ON (default): runs an immediate scan on
+ *   project/tree changes AND sets a 3-second polling interval so edits that
+ *   haven't hit the file store yet (e.g. mid-debounce typing) are still caught.
+ * - When OFF: scans once per project, then only via the manual Re-scan button.
+ *
+ * setState happens inside the async fetch (after `await`), never synchronously
+ * in the effect body.
  */
+const AUTO_INTERVAL_MS = 3000;
+
 export function useBackgroundDebugScan() {
   const current = useProjectStore((s) => s.current);
   const fileVersion = useFileStore((s) => s.tree);
   const autoOnTreeChange = useDebugStore((s) => s.autoOnTreeChange);
   const scannedProjectId = useDebugStore((s) => s.projectId);
+  // Guard against overlapping scans (poll + change firing concurrently).
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (!current) return;
     if (!autoOnTreeChange) {
-      // With auto off, only scan once per project (the DebugPanel's own
-      // mount effect handles the explicit one-time scan). Skip here unless
-      // we've never scanned this project.
+      // With auto off, only scan once per project. Skip here unless we've
+      // never scanned this project.
       if (scannedProjectId === current.id) return;
     }
 
     let cancelled = false;
     const run = async () => {
+      if (inFlight.current) return;
+      inFlight.current = true;
       useDebugStore.getState().setLoading(true);
       useDebugStore.getState().setError(null);
       try {
@@ -49,12 +58,24 @@ export function useBackgroundDebugScan() {
         useDebugStore.getState().setResult(null);
         useDebugStore.getState().setProjectId(current.id);
       } finally {
+        inFlight.current = false;
         if (!cancelled) useDebugStore.getState().setLoading(false);
       }
     };
     void run();
+
+    // When auto is on, also poll every 3 seconds so in-progress edits
+    // (before the 800ms save debounce writes to the file store) are caught.
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    if (autoOnTreeChange) {
+      intervalId = setInterval(() => {
+        if (!cancelled) void run();
+      }, AUTO_INTERVAL_MS);
+    }
+
     return () => {
       cancelled = true;
+      if (intervalId) clearInterval(intervalId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, fileVersion, autoOnTreeChange]);

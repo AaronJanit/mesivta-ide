@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon } from "lucide-react";
+import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink } from "lucide-react";
 import { getEditor, useEditorBridge } from "@/lib/editorBridge";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -118,6 +118,28 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, onLogout }: ToolbarProp
       </div>
 
       <div className="flex-1" />
+
+      {/* HackClub Toolbox — opens in new tab */}
+      <a
+        href="https://toolbox.hackclub.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 rounded px-2 py-1 text-xs text-muted transition hover:bg-panel-2 hover:text-foreground"
+        title="Open HackClub Toolbox (new tab)"
+        style={{ fontFamily: '"Phantom Sans", system-ui, sans-serif' }}
+      >
+        <img
+          src="https://assets.hackclub.com/icon-rounded.svg"
+          alt="HackClub"
+          width={20}
+          height={20}
+          className="size-5 shrink-0"
+        />
+        <span className="font-medium tracking-tight">HackClub Toolbox</span>
+        <ExternalLink className="size-3 opacity-70" />
+      </a>
+
+      <div className="mx-2 h-4 w-px bg-border" />
 
       <button
         onClick={onLogout}
