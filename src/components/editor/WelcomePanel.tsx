@@ -87,8 +87,7 @@ export function WelcomePanel() {
           {projects.length > 0 && (
             <p className="mb-4 text-sm text-muted">
               You have <span className="text-foreground">{projects.length}</span> project
-              {projects.length === 1 ? "" : "s"}. Current project:{" "}
-              <span className="text-foreground">{current?.name}</span>
+              {projects.length === 1 ? "" : "s"}. Select one from the sidebar or create a new one below.
             </p>
           )}
 
