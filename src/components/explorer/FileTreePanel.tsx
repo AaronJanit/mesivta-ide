@@ -334,7 +334,7 @@ interface FileTreeRowProps {
   renamingId: string | null;
   renameName: string;
   confirmDeleteId: string | null;
-  renameInputRef: React.RefObject<HTMLInputElement>;
+  renameInputRef: React.RefObject<HTMLInputElement | null>;
   onOpenFile: (data: FileDTO) => void;
   onToggleFolder: (id: string) => void;
   onStartRename: (node: FileDTO) => void;
