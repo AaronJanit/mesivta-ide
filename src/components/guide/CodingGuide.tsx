@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
-  X,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -133,24 +132,6 @@ export function CodingGuide({ onClose }: CodingGuideProps) {
 
   return (
     <div className="flex h-full flex-col bg-editor text-foreground">
-      {/* Header */}
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-panel px-3">
-        <BookOpen className="size-4 text-accent" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-foreground">
-          Coding Guide
-        </span>
-        <span className="text-[11px] text-muted-2">— HTML, CSS & JavaScript for beginners</span>
-        <div className="flex-1" />
-        <button
-          onClick={onClose}
-          className="rounded p-1 text-muted hover:bg-panel-2 hover:text-foreground"
-          title="Close guide"
-          aria-label="Close guide"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-
       {/* Body: TOC + content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sticky Table of Contents */}

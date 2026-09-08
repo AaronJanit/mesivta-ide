@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/ide";
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ export default function LoginPage() {
       } else {
         await api.auth.register(username, password);
       }
-      router.replace("/");
+      router.replace(redirectTo);
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -36,7 +38,7 @@ export default function LoginPage() {
       {/* Hero */}
       <div className="mb-10 flex items-center gap-5">
         <img
-          src="https://mesivta.co.uk/wp-content/uploads/2022/04/xwhite-logo-256x300.png.pagespeed.ic.T16UwmHs8r.png"
+          src="/white-logo.png"
           alt="Mesivta IDE logo"
           width={104}
           height={122}

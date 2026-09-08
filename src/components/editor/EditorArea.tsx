@@ -2,11 +2,13 @@
 
 import { useRef, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { X, Eye, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Globe } from "lucide-react";
+import { X, Eye, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Globe, Sparkles } from "lucide-react";
 import { useEditorStore, type EditorTab } from "@/stores/useEditorStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { iconForFile } from "@/lib/fileIcons";
 import { PreviewPanel } from "@/components/preview/PreviewPanel";
+import { WelcomePanel } from "./WelcomePanel";
+import { WELCOME_TAB_ID } from "@/stores/useEditorStore";
 import { cn } from "@/lib/cn";
 
 // Monaco is browser-only. SSR must be disabled.
@@ -95,10 +97,12 @@ export function EditorArea() {
         </div>
       </div>
 
-      {/* Editor OR preview — full height, swapped by active tab */}
+      {/* Editor OR preview OR welcome — full height, swapped by active tab */}
       <div className="flex-1 overflow-hidden">
         {showPreview ? (
           <PreviewPanel />
+        ) : activeTab?.isWelcome ? (
+          <WelcomePanel />
         ) : activeTab ? (
           <MonacoInner
             key={activeTab.fileId}
@@ -128,8 +132,12 @@ function Tab({ tab, active, onClick, onClose }: { tab: EditorTab; active: boolea
         active ? "bg-editor text-foreground" : "bg-panel text-muted hover:bg-panel-2",
       )}
     >
-      <span className={Icon.color ?? "text-muted"}>
-        <FileTypeIcon name={tab.name} />
+      <span className={tab.isWelcome ? "text-accent" : (Icon.color ?? "text-muted")}>
+        {tab.isWelcome ? (
+          <Sparkles className="size-3.5" />
+        ) : (
+          <FileTypeIcon name={tab.name} />
+        )}
       </span>
       <span className="max-w-[140px] truncate">{tab.name}</span>
       <button

@@ -132,6 +132,14 @@ body {
 /* Selection */
 ::selection { background: hsl(var(--accent) / 0.3); }
 
+/* Landing page logo fade in/out */
+@keyframes landingFade {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
 /* Focus ring */
 :focus-visible {
   outline: 1.5px solid hsl(var(--accent));
