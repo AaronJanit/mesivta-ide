@@ -1,13 +1,14 @@
 @import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
 
 /* ===== Dark-first theme tokens (no light :root bleed — see tailwind-shadcn-dark-default.md) ===== */
 :root {
   color-scheme: dark;
 
   /* Surfaces */
-  --background: 240 10% 4%;          /* #0a0a0f app bg */
-  --panel: 240 8% 7%;                /* #121215 sidebar/panel bg */
-  --panel-2: 240 8% 10%;             /* #1b1b1f active/row hover */
+  --background: 240 10% 7%;          /* #111116 app bg */
+  --panel: 240 8% 10%;                /* #1a1a1f sidebar/panel bg */
+  --panel-2: 240 8% 13%;             /* #212126 active/row hover */
   --border: 220 10% 18%;            /* #2a2d33 subtle dividers */
   --border-strong: 220 10% 26%;
 
@@ -18,7 +19,7 @@
 
   /* Accent */
   --accent: 199 80% 50%;            /* #00b3ff cyan */
-  --accent-fg: 240 10% 4%;
+  --accent-fg: 240 10% 7%;
   --accent-soft: 199 80% 50% / 0.12;
 
   /* Status */
@@ -27,8 +28,8 @@
   --success: 142 56% 56%;
 
   /* Editor */
-  --editor-bg: 240 10% 5%;
-  --gutter: 240 8% 12%;
+  --editor-bg: 240 10% 8%;
+  --gutter: 240 8% 15%;
 
   /* Shadows tuned for dark surfaces */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);

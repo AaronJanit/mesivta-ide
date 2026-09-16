@@ -5,6 +5,9 @@ import { create } from "zustand";
 /** Reserved fileId for the welcome tab. Not a real file. */
 export const WELCOME_TAB_ID = "__welcome__";
 
+/** Reserved fileId for the live-preview tab. Not a real file. */
+export const PREVIEW_TAB_ID = "__preview__";
+
 export interface EditorTab {
   fileId: string;
   name: string;
@@ -12,6 +15,7 @@ export interface EditorTab {
   language: string;
   dirty: boolean;
   isWelcome?: boolean;
+  isPreview?: boolean;
 }
 
 interface EditorState {
@@ -19,6 +23,7 @@ interface EditorState {
   activeFileId: string | null;
   open: (tab: EditorTab) => void;
   openWelcome: () => void;
+  openPreview: () => void;
   close: (fileId: string) => void;
   setActive: (fileId: string) => void;
   setContent: (fileId: string, content: string) => void;
@@ -49,6 +54,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         { fileId: WELCOME_TAB_ID, name: "Welcome", content: "", language: "plaintext", dirty: false, isWelcome: true },
       ],
       activeFileId: WELCOME_TAB_ID,
+    });
+  },
+  openPreview: () => {
+    if (get().tabs.some((t) => t.fileId === PREVIEW_TAB_ID)) {
+      set({ activeFileId: PREVIEW_TAB_ID });
+      return;
+    }
+    set({
+      tabs: [
+        ...get().tabs,
+        { fileId: PREVIEW_TAB_ID, name: "Preview", content: "", language: "plaintext", dirty: false, isPreview: true },
+      ],
+      activeFileId: PREVIEW_TAB_ID,
     });
   },
   close: (fileId) => {

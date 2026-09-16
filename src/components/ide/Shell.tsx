@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useTerminalStore } from "@/stores/useTerminalStore";
 import { Toolbar } from "./Toolbar";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { Sidebar } from "./Sidebar";
@@ -11,11 +12,13 @@ import { EditorArea } from "@/components/editor/EditorArea";
 import { AssistantPanel } from "@/components/ai/AssistantPanel";
 import { DebugPanel } from "@/components/debug/DebugPanel";
 import { CodingGuide } from "@/components/guide/CodingGuide";
+import { BottomPanel } from "./BottomPanel";
 import { useBackgroundDebugScan } from "@/hooks/useBackgroundDebugScan";
 import type { ActivityView } from "./ActivityBar";
 
 export function Shell({ onLogout }: { onLogout: () => void }) {
   const current = useProjectStore((s) => s.current);
+  const showBottomPanel = useTerminalStore((s) => s.showPanel);
   const [aiChatVisible, setAiChatVisible] = useState(true);
   const [activityView, setActivityView] = useState<ActivityView>("explorer");
   const showDebug = activityView === "debug";
@@ -73,23 +76,39 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
             </PanelGroup>
           </div>
         ) : (
-          <PanelGroup orientation="horizontal" id="ide-main">
-            <Panel defaultSize="20%" minSize="14%" maxSize="35%">
-              <Sidebar active={activityView} onSelect={setActivityView} />
-            </Panel>
-            <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
-            <Panel minSize="30%">
-              <EditorArea />
-            </Panel>
-            {aiChatVisible && (
-              <>
-                <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
-                <Panel defaultSize="28%" minSize="18%" maxSize="45%">
-                  <AssistantPanel />
-                </Panel>
-              </>
-            )}
-          </PanelGroup>
+          <div className="flex h-full">
+            <ActivityBar active={activityView} onSelect={setActivityView} />
+            <PanelGroup orientation="horizontal" id="ide-main" className="flex-1">
+              <Panel defaultSize="20%" minSize="14%" maxSize="35%">
+                <Sidebar active={activityView} onSelect={setActivityView} />
+              </Panel>
+              <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
+              <Panel minSize="30%">
+                {/* Vertical split: editor on top, terminal/preview on bottom */}
+                <PanelGroup orientation="vertical" id="ide-editor-split">
+                  <Panel defaultSize={showBottomPanel ? 60 : 100} minSize="20%">
+                    <EditorArea />
+                  </Panel>
+                  {showBottomPanel && (
+                    <>
+                      <PanelResizeHandle className="h-px bg-border transition-colors hover:bg-accent/50" />
+                      <Panel defaultSize="40%" minSize="15%" maxSize="70%">
+                        <BottomPanel />
+                      </Panel>
+                    </>
+                  )}
+                </PanelGroup>
+              </Panel>
+              {aiChatVisible && (
+                <>
+                  <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
+                  <Panel defaultSize="28%" minSize="18%" maxSize="45%">
+                    <AssistantPanel />
+                  </Panel>
+                </>
+              )}
+            </PanelGroup>
+          </div>
         )}
       </div>
     </div>

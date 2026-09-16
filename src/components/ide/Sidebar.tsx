@@ -1,6 +1,6 @@
 "use client";
 
-import { ActivityBar, type ActivityView } from "./ActivityBar";
+import { type ActivityView } from "./ActivityBar";
 import { FileTreePanel } from "@/components/explorer/FileTreePanel";
 
 interface SidebarProps {
@@ -51,12 +51,7 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
     }
   }
 
-  return (
-    <div className="flex h-full">
-      <ActivityBar active={active} onSelect={onSelect} />
-      <div className="h-full flex-1 overflow-hidden">{renderContent()}</div>
-    </div>
-  );
+  return <div className="h-full overflow-hidden">{renderContent()}</div>;
 }
 
 function labelFor(view: ActivityView): string {
@@ -73,5 +68,9 @@ function labelFor(view: ActivityView): string {
       return "Source Control";
     case "settings":
       return "Settings";
+    case "terminal":
+      return "Terminal";
+    default:
+      return view;
   }
 }

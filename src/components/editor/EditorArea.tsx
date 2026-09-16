@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { X, Eye, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Globe, Sparkles } from "lucide-react";
-import { useEditorStore, type EditorTab } from "@/stores/useEditorStore";
+import { X, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Sparkles, Globe } from "lucide-react";
+import { useEditorStore, type EditorTab, WELCOME_TAB_ID, PREVIEW_TAB_ID } from "@/stores/useEditorStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { iconForFile } from "@/lib/fileIcons";
-import { PreviewPanel } from "@/components/preview/PreviewPanel";
 import { WelcomePanel } from "./WelcomePanel";
-import { WELCOME_TAB_ID } from "@/stores/useEditorStore";
+import { LivePreview } from "@/components/preview/LivePreview";
 import { cn } from "@/lib/cn";
 
 // Monaco is browser-only. SSR must be disabled.
@@ -37,7 +36,6 @@ export function EditorArea() {
   const { tabs, activeFileId, setActive, close, setContent, markClean } = useEditorStore();
   const { updateFile } = useFileStore();
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const [showPreview, setShowPreview] = useState(false);
 
   // Debounced auto-save
   const scheduleSave = useCallback(
@@ -62,47 +60,19 @@ export function EditorArea() {
           <Tab
             key={t.fileId}
             tab={t}
-            active={t.fileId === activeFileId && !showPreview}
-            onClick={() => {
-              setShowPreview(false);
-              setActive(t.fileId);
-            }}
+            active={t.fileId === activeFileId}
+            onClick={() => setActive(t.fileId)}
             onClose={() => close(t.fileId)}
           />
         ))}
-        {/* Preview tab */}
-        <button
-          onClick={() => setShowPreview(true)}
-          className={cn(
-            "group flex h-full shrink-0 cursor-pointer items-center gap-1.5 border-r border-border pl-3 pr-3 text-xs",
-            showPreview ? "bg-editor text-foreground" : "bg-panel text-muted hover:bg-panel-2",
-          )}
-          title="Live preview"
-        >
-          <Globe className="size-3.5 text-accent" />
-          <span>Preview</span>
-        </button>
-        <div className="flex-1" />
-        <div className="flex items-center gap-1 border-l border-border px-2">
-          <button
-            onClick={() => setShowPreview((v) => !v)}
-            className={cn(
-              "rounded p-1 hover:bg-panel-2",
-              showPreview ? "text-accent" : "text-muted hover:text-foreground",
-            )}
-            title="Toggle preview"
-          >
-            <Eye className="size-3.5" />
-          </button>
-        </div>
       </div>
 
-      {/* Editor OR preview OR welcome — full height, swapped by active tab */}
+      {/* Editor OR welcome OR preview — full height, swapped by active tab */}
       <div className="flex-1 overflow-hidden">
-        {showPreview ? (
-          <PreviewPanel />
-        ) : activeTab?.isWelcome ? (
+        {activeTab?.isWelcome ? (
           <WelcomePanel />
+        ) : activeTab?.isPreview ? (
+          <LivePreview />
         ) : activeTab ? (
           <MonacoInner
             key={activeTab.fileId}
@@ -132,9 +102,11 @@ function Tab({ tab, active, onClick, onClose }: { tab: EditorTab; active: boolea
         active ? "bg-editor text-foreground" : "bg-panel text-muted hover:bg-panel-2",
       )}
     >
-      <span className={tab.isWelcome ? "text-accent" : (Icon.color ?? "text-muted")}>
+      <span className={tab.isWelcome ? "text-accent" : tab.isPreview ? "text-accent" : (Icon.color ?? "text-muted")}>
         {tab.isWelcome ? (
           <Sparkles className="size-3.5" />
+        ) : tab.isPreview ? (
+          <Globe className="size-3.5" />
         ) : (
           <FileTypeIcon name={tab.name} />
         )}

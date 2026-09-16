@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { getSession } from "@/lib/auth/session";
 import { createMessage, renameChat } from "@/lib/db/chats";
 import { listFiles } from "@/lib/db/files";
@@ -7,10 +6,10 @@ import { listFiles } from "@/lib/db/files";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const cerebras = new OpenAI({
-  apiKey: process.env.CEREBRAS_API_KEY!,
-  baseURL: "https://api.cerebras.ai/v1",
-});
+// Ollama Cloud — native /api/chat endpoint (NDJSON, not OpenAI SSE).
+// See also: /api/debug/explain/route.ts and /api/debug/enhanced/route.ts
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "https://ollama.com/api";
+const MODEL = process.env.OLLAMA_CHAT_MODEL ?? "gpt-oss:20b-cloud";
 
 interface ActiveFileContext {
   name: string;
@@ -98,7 +97,7 @@ Keep answers focused and skippable. No filler.
 
 IMPORTANT: The user is editing files in this IDE. The context below includes the CURRENTLY ACTIVE FILE (the one the user is looking at) and any other OPEN TABS with their full contents. When the user asks about "this file", "my code", "the function", "why doesn't it work", etc., they are almost always referring to the ACTIVE FILE or one of the OPEN TABS. Read those contents before answering — ground your answer in the actual code shown. Quote relevant lines by line number or snippet when helpful.${contextBlock}`;
 
-  // 3. Compose messages for Cerebras: system + history (last ~20) + new user msg.
+  // 3. Compose messages for Ollama Cloud: system + history (last ~20) + new user msg.
   const history = (body.history ?? []).slice(-20);
   const messages = [
     { role: "system" as const, content: systemPrompt },
@@ -110,26 +109,73 @@ IMPORTANT: The user is editing files in this IDE. The context below includes the
   const firstPrompt = body.content.trim().slice(0, 60);
   renameChat(sess.userId, body.chatId, firstPrompt || "New chat").catch(() => {});
 
-  // 5. Stream from Cerebras gpt-oss-120b, proxy SSE to the client.
+  const apiKey = process.env.OLLAMA_API_KEY ?? "";
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "OLLAMA_API_KEY is not set on the server — add it to .env.local" },
+      { status: 500 },
+    );
+  }
+
+  // 5. Stream from Ollama Cloud (gpt-oss:20b-cloud), proxy SSE to the client.
+  //    Ollama streams newline-delimited JSON objects (NDJSON), not OpenAI SSE.
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let assistantContent = "";
       try {
-        const completion = await cerebras.chat.completions.create({
-          model: "gpt-oss-120b",
-          stream: true,
-          temperature: 0.2,
-          max_completion_tokens: 4096,
-          reasoning_effort: "low",
-          messages,
+        const upstreamRes = await fetch(`${OLLAMA_BASE_URL}/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            stream: true,
+            options: { temperature: 0.2 },
+            messages,
+          }),
         });
 
-        for await (const chunk of completion) {
-          const delta = chunk.choices[0]?.delta?.content;
-          if (delta) {
-            assistantContent += delta;
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ delta })}\n\n`));
+        if (!upstreamRes.ok || !upstreamRes.body) {
+          const errText = await upstreamRes.text().catch(() => "");
+          throw new Error(
+            `Ollama Cloud responded ${upstreamRes.status} ${upstreamRes.statusText}: ${errText.slice(0, 300)}`,
+          );
+        }
+
+        const reader = upstreamRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          // Ollama delimits objects with newlines; process all complete lines.
+          let nl: number;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            const line = buf.slice(0, nl).trim();
+            buf = buf.slice(nl + 1);
+            if (!line) continue;
+            try {
+              const obj = JSON.parse(line) as {
+                message?: { content?: string };
+                done?: boolean;
+                error?: string;
+              };
+              if (obj.error) throw new Error(obj.error);
+              const delta = obj.message?.content;
+              if (delta) {
+                assistantContent += delta;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ delta })}\n\n`));
+              }
+            } catch (e) {
+              // Ignore malformed partial lines mid-stream; real errors throw above.
+              if (e instanceof Error && e.message && !e.message.includes("JSON")) {
+                throw e;
+              }
+            }
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
