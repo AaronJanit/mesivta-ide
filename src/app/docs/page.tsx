@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
@@ -60,15 +61,17 @@ function DocsPageInner() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-panel px-4">
-        <img
-          src="/white-logo.png"
-          alt="Mesivta Code"
-          width={28}
-          height={33}
-          className="drop-shadow-[0_2px_8px_rgba(0,179,255,0.3)]"
-        />
-        <span className="text-sm font-semibold tracking-tight">Mesivta Code</span>
+      <header className="flex h-24 shrink-0 items-center gap-4 border-b border-border bg-panel px-4">
+        <Link href="/" aria-label="Go to Mesivta Code home">
+          <img
+            src="/white-logo.png"
+            alt="Mesivta Code"
+            width={64}
+            height={74}
+            className="drop-shadow-[0_2px_8px_rgba(0,179,255,0.3)]"
+          />
+        </Link>
+        <span className="text-xl font-semibold tracking-tight">Mesivta Code</span>
         <span className="text-xs uppercase tracking-[0.2em] text-muted-2">Documentation</span>
         <div className="flex-1" />
         <a

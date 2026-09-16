@@ -28,15 +28,15 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, onLogout }: ToolbarProp
   }, []);
 
   return (
-    <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
+    <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
       {/* Logo — Mesivta IDE text only, same gradient style as login, smaller.
           Uses foreground (white-dark / dark-light) so it adapts to light mode. */}
       <a
         href="/dashboard"
-        className="flex items-center gap-1.5 rounded px-1 py-1 text-base font-bold tracking-tight text-foreground transition hover:bg-panel-2"
+        className="flex items-center gap-2 rounded px-1 py-1 text-lg font-bold tracking-tight text-foreground transition hover:bg-panel-2"
         title="Back to dashboard"
       >
-        <LayoutDashboard className="size-3.5 text-accent" />
+        <LayoutDashboard className="size-4 text-accent" />
         <span className="bg-gradient-to-r from-foreground via-foreground to-[hsl(var(--accent))] bg-clip-text text-transparent">
           Mesivta IDE
         </span>

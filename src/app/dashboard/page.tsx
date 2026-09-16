@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 
 const learningLinks = [
   {
@@ -34,16 +35,18 @@ export default function DashboardPage() {
   return (
     <main className="h-screen overflow-y-auto bg-background text-foreground">
       <header className="border-b border-border bg-panel">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
-          <img
-            src="/white-logo.png"
-            alt="Mesivta Code"
-            width={30}
-            height={35}
-            className="drop-shadow-[0_2px_8px_rgba(0,179,255,0.3)]"
-          />
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-5">
+          <Link href="/" aria-label="Go to Mesivta Code home">
+            <img
+              src="/white-logo.png"
+              alt="Mesivta Code"
+              width={64}
+              height={74}
+              className="drop-shadow-[0_2px_8px_rgba(0,179,255,0.3)]"
+            />
+          </Link>
           <div>
-            <p className="text-sm font-semibold">Mesivta Code</p>
+            <p className="text-xl font-semibold tracking-tight">Mesivta Code</p>
             <p className="text-xs text-muted-2">Coding club workspace</p>
           </div>
           <div className="flex-1" />

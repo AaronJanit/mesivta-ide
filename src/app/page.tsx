@@ -1,21 +1,24 @@
 "use client";
 
 import { LayoutDashboard } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-10 overflow-auto bg-background px-6 py-10">
       {/* Keep the welcome branding visible while the workspace choices are available. */}
       <div className="flex items-center gap-5">
-        <img
-          src="/white-logo.png"
-          alt="Mesivta IDE logo"
-          width={104}
-          height={122}
-          className="drop-shadow-[0_4px_20px_rgba(0,179,255,0.4)]"
-        />
+        <Link href="/" aria-label="Go to Mesivta Code home">
+          <img
+            src="/white-logo.png"
+            alt="Mesivta IDE logo"
+            width={124}
+            height={145}
+            className="drop-shadow-[0_4px_20px_rgba(0,179,255,0.4)]"
+          />
+        </Link>
         <div className="flex flex-col leading-none">
-          <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+          <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-5xl font-bold tracking-tight text-transparent">
             Mesivta Code
           </span>
           <span className="mt-2 text-sm font-medium uppercase tracking-[0.25em] text-muted">
