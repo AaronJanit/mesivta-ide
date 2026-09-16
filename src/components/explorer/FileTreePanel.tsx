@@ -277,7 +277,6 @@ export function FileTreePanel() {
                 renamingId={renamingId}
                 renameName={renameName}
                 confirmDeleteId={confirmDeleteId}
-                renameInputRef={renameInputRef}
                 onOpenFile={openFile}
                 onToggleFolder={toggleFolder}
                 onStartRename={(n) => { setRenamingId(n.id); setRenameName(n.name); }}
@@ -334,7 +333,6 @@ interface FileTreeRowProps {
   renamingId: string | null;
   renameName: string;
   confirmDeleteId: string | null;
-  renameInputRef: React.RefObject<HTMLInputElement | null>;
   onOpenFile: (data: FileDTO) => void;
   onToggleFolder: (id: string) => void;
   onStartRename: (node: FileDTO) => void;
@@ -356,6 +354,11 @@ function FileTreeRow(props: FileTreeRowProps) {
   const isConfirmingDelete = props.confirmDeleteId === data.id;
   const iconSpec = iconForFile(data.name);
   const [showActions, setShowActions] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming) renameInputRef.current?.focus();
+  }, [isRenaming]);
 
   return (
     <>
@@ -391,7 +394,7 @@ function FileTreeRow(props: FileTreeRowProps) {
         {/* Name or rename input */}
         {isRenaming ? (
           <input
-            ref={props.renameInputRef}
+            ref={renameInputRef}
             value={props.renameName}
             onChange={(e) => props.setRenameName(e.target.value)}
             onKeyDown={(e) => {

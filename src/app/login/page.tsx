@@ -4,19 +4,25 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api/client";
 
-export default function LoginPage() {
+export default function LoginPage({ initialMode = "login" }: { initialMode?: "login" | "register" } = {}) {
   return (
     <Suspense>
-      <LoginPageInner />
+      <LoginPageInner initialMode={initialMode} />
     </Suspense>
   );
 }
 
-function LoginPageInner() {
+function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/ide";
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectTo = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+    ? requestedRedirect
+    : "/dashboard";
+  const queryMode = searchParams.get("mode");
+  const [mode] = useState<"login" | "register">(
+    queryMode === "register" || queryMode === "login" ? queryMode : initialMode,
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -66,14 +72,14 @@ function LoginPageInner() {
       <div className="w-[340px] overflow-hidden rounded-md border border-border bg-panel shadow-md">
         {/* Tabs */}
         <div className="grid grid-cols-2 border-b border-border bg-panel-2">
-          {(["login", "register"] as const).map((m) => (
-            <button
+          {(["login", "register"] as const).map((m) => {
+            const tabHref = m === "register"
+              ? `/register?redirect=${encodeURIComponent(redirectTo)}`
+              : `/login?redirect=${encodeURIComponent(redirectTo)}`;
+            return (
+            <a
               key={m}
-              type="button"
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
+              href={tabHref}
               className={`px-3 py-2.5 text-sm font-medium transition ${
                 mode === m
                   ? "bg-panel text-foreground"
@@ -81,8 +87,9 @@ function LoginPageInner() {
               }`}
             >
               {m === "login" ? "Sign in" : "Register"}
-            </button>
-          ))}
+            </a>
+            );
+          })}
         </div>
 
         <form onSubmit={submit} className="p-5">

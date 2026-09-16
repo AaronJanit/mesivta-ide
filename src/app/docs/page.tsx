@@ -32,6 +32,12 @@ export default function DocsPage() {
         <span className="text-[11px] text-muted-2">— HTML, CSS &amp; JavaScript for beginners</span>
         <div className="flex-1" />
         <button
+          onClick={() => router.push("/dashboard")}
+          className="rounded border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-border-strong hover:text-foreground"
+        >
+          Dashboard
+        </button>
+        <button
           onClick={() => router.push("/ide")}
           className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition hover:opacity-90"
         >

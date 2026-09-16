@@ -1,15 +1,25 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/docs"];
+const PUBLIC_PATHS = ["/", "/login", "/register"];
 const PUBLIC_API = ["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/me"];
+
+// Keep workspace pages easy to inspect locally when Supabase credentials are
+// not present. Production uses the normal authenticated workspace flow.
+const LOCAL_WORKSPACE_PATHS = ["/docs", "/dashboard", "/challenges"];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   // Allow public API
   if (PUBLIC_API.includes(pathname)) return NextResponse.next();
-  // Allow public pages (and any sub-paths under /docs)
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/docs")) return NextResponse.next();
+  // Allow the public shell and, during local development, workspace pages.
+  if (
+    PUBLIC_PATHS.includes(pathname) ||
+    (process.env.NODE_ENV !== "production" &&
+      LOCAL_WORKSPACE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`)))
+  ) {
+    return NextResponse.next();
+  }
   // Static + Next internals
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) return NextResponse.next();
   // Public static assets (files with extensions in the public/ folder)

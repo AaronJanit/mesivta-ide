@@ -22,12 +22,20 @@ export async function POST(req: Request) {
   if (password.length < 6) {
     return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
   }
-  const existing = await getUserByUsername(username).catch(() => null);
-  if (existing) {
-    return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+  try {
+    const existing = await getUserByUsername(username);
+    if (existing) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+    }
+    const hash = await hashPassword(password);
+    const user = await createUser(username, hash);
+    await setSession({ userId: user.id, username: user.username });
+    return NextResponse.json({ user: { id: user.id, username: user.username } });
+  } catch (error) {
+    console.error("Registration failed", error);
+    return NextResponse.json(
+      { error: "Account storage is not configured. Add the Supabase settings to .env.local." },
+      { status: 503 },
+    );
   }
-  const hash = await hashPassword(password);
-  const user = await createUser(username, hash);
-  await setSession({ userId: user.id, username: user.username });
-  return NextResponse.json({ user: { id: user.id, username: user.username } });
 }
