@@ -289,12 +289,12 @@ function lessonMatches(lesson: Lesson, q: string): boolean {
   );
 }
 
-function LessonView({
+export function LessonView({
   lesson,
   registerRef,
 }: {
   lesson: FlatLesson;
-  registerRef: (el: HTMLElement | null) => void;
+  registerRef?: (el: HTMLElement | null) => void;
 }) {
   const Icon = SECTION_ICONS[
     GUIDE_SECTIONS.find((s) => s.id === lesson.sectionId)?.icon ?? ""

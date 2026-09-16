@@ -13,14 +13,6 @@ import {
 
 const learningLinks = [
   {
-    title: "Mesivta Docs",
-    description: "The existing HTML, CSS, and JavaScript guide.",
-    href: "/docs",
-    icon: BookOpen,
-    internal: true,
-    label: "Open docs",
-  },
-  {
     title: "CodeHS",
     description: "Structured courses, lessons, and classroom assignments.",
     href: "https://codehs.com/",
@@ -40,7 +32,7 @@ const learningLinks = [
 
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen overflow-auto bg-background text-foreground">
+    <main className="h-screen overflow-y-auto bg-background text-foreground">
       <header className="border-b border-border bg-panel">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
           <img
@@ -92,6 +84,14 @@ export default function DashboardPage() {
               action="Open IDE"
             />
             <WorkspaceCard
+              title="Docs"
+              description="Learn HTML, CSS, and JavaScript with the Mesivta coding guide."
+              icon={<BookOpen className="size-5" />}
+              accent="green"
+              href="/docs"
+              action="Open docs"
+            />
+            <WorkspaceCard
               title="Challenges & Sprints"
               description="See the current task, sprint goals, and work to complete."
               icon={<CheckSquare className="size-5" />}
@@ -103,7 +103,7 @@ export default function DashboardPage() {
               title="My progress"
               description="A home for completed work and milestones as the club grows."
               icon={<Flame className="size-5" />}
-              accent="green"
+              accent="cyan"
               href="/challenges#completed"
               action="View progress"
             />

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Code2, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -28,24 +28,12 @@ export default function HomePage() {
       </div>
 
       <div className="flex flex-col items-center gap-5">
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
+        <div className="flex flex-col items-center">
           <ChoiceCard
             icon={<LayoutDashboard className="size-7 text-accent" />}
             title="Dashboard"
             subtitle="Your coding hub"
             href="/dashboard"
-          />
-          <ChoiceCard
-            icon={<BookOpen className="size-7 text-accent" />}
-            title="Docs"
-            subtitle="Learn to code"
-            href="/docs"
-          />
-          <ChoiceCard
-            icon={<Code2 className="size-7 text-accent" />}
-            title="IDE"
-            subtitle="Write code"
-            href="/ide"
           />
         </div>
       </div>
