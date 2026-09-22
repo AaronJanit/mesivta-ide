@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Sparkles, FolderPlus, BookOpen, FileCode, Check, X, FilePlus, Globe, Bug, MessageSquare } from "lucide-react";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useEditorStore, WELCOME_TAB_ID } from "@/stores/useEditorStore";
@@ -60,13 +61,15 @@ export function WelcomePanel() {
       <div className="mx-auto max-w-2xl px-10 py-16">
         {/* Hero */}
         <div className="mb-8 flex items-center gap-4">
-          <img
-            src="/white-logo.png"
-            alt="Mesivta IDE logo"
-            width={56}
-            height={66}
-            className="drop-shadow-[0_2px_12px_rgba(0,179,255,0.3)]"
-          />
+          <Link href="/" aria-label="Go to Mesivta Code home">
+            <img
+              src="/white-logo.png"
+              alt="Mesivta IDE logo"
+              width={56}
+              height={66}
+              className="drop-shadow-[0_2px_12px_rgba(0,179,255,0.3)]"
+            />
+          </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Welcome to Mesivta IDE</h1>
             <p className="mt-1 text-sm text-muted">
@@ -188,13 +191,15 @@ export function WelcomePanel() {
       <div className="mx-auto max-w-2xl px-10 py-16">
         {/* Hero */}
         <div className="mb-8 flex items-center gap-4">
-          <img
-            src="/white-logo.png"
-            alt="Mesivta IDE logo"
-            width={48}
-            height={57}
-            className="drop-shadow-[0_2px_12px_rgba(0,179,255,0.3)]"
-          />
+          <Link href="/" aria-label="Go to Mesivta Code home">
+            <img
+              src="/white-logo.png"
+              alt="Mesivta IDE logo"
+              width={48}
+              height={57}
+              className="drop-shadow-[0_2px_12px_rgba(0,179,255,0.3)]"
+            />
+          </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Welcome to your project

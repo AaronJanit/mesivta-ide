@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink } from "lucide-react";
+import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink, LayoutDashboard } from "lucide-react";
 import { getEditor, useEditorBridge } from "@/lib/editorBridge";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -28,12 +28,19 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, onLogout }: ToolbarProp
   }, []);
 
   return (
-    <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
+    <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
       {/* Logo — Mesivta IDE text only, same gradient style as login, smaller.
           Uses foreground (white-dark / dark-light) so it adapts to light mode. */}
-      <span className="bg-gradient-to-r from-foreground via-foreground to-[hsl(var(--accent))] bg-clip-text text-base font-bold tracking-tight text-transparent select-none">
-        Mesivta IDE
-      </span>
+      <a
+        href="/dashboard"
+        className="flex items-center gap-2 rounded px-1 py-1 text-lg font-bold tracking-tight text-foreground transition hover:bg-panel-2"
+        title="Back to dashboard"
+      >
+        <LayoutDashboard className="size-4 text-accent" />
+        <span className="bg-gradient-to-r from-foreground via-foreground to-[hsl(var(--accent))] bg-clip-text text-transparent">
+          Mesivta IDE
+        </span>
+      </a>
 
       <div className="mx-2 h-4 w-px bg-border" />
 

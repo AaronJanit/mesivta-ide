@@ -2,21 +2,28 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api/client";
 
-export default function LoginPage() {
+export default function LoginPage({ initialMode = "login" }: { initialMode?: "login" | "register" } = {}) {
   return (
     <Suspense>
-      <LoginPageInner />
+      <LoginPageInner initialMode={initialMode} />
     </Suspense>
   );
 }
 
-function LoginPageInner() {
+function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/ide";
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectTo = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+    ? requestedRedirect
+    : "/dashboard";
+  const queryMode = searchParams.get("mode");
+  const [mode] = useState<"login" | "register">(
+    queryMode === "register" || queryMode === "login" ? queryMode : initialMode,
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,15 +52,17 @@ function LoginPageInner() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 pt-[8vh] pb-10">
       {/* Hero */}
       <div className="mb-10 flex items-center gap-5">
-        <img
-          src="/white-logo.png"
-          alt="Mesivta IDE logo"
-          width={104}
-          height={122}
-          className="drop-shadow-[0_4px_20px_rgba(0,179,255,0.4)]"
-        />
+        <Link href="/" aria-label="Go to Mesivta Code home">
+          <img
+            src="/white-logo.png"
+            alt="Mesivta IDE logo"
+            width={124}
+            height={145}
+            className="drop-shadow-[0_4px_20px_rgba(0,179,255,0.4)]"
+          />
+        </Link>
         <div className="flex flex-col leading-none">
-          <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+          <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-5xl font-bold tracking-tight text-transparent">
             Mesivta IDE
           </span>
           <span className="mt-2 text-sm font-medium uppercase tracking-[0.25em] text-muted">
@@ -66,14 +75,14 @@ function LoginPageInner() {
       <div className="w-[340px] overflow-hidden rounded-md border border-border bg-panel shadow-md">
         {/* Tabs */}
         <div className="grid grid-cols-2 border-b border-border bg-panel-2">
-          {(["login", "register"] as const).map((m) => (
-            <button
+          {(["login", "register"] as const).map((m) => {
+            const tabHref = m === "register"
+              ? `/register?redirect=${encodeURIComponent(redirectTo)}`
+              : `/login?redirect=${encodeURIComponent(redirectTo)}`;
+            return (
+            <a
               key={m}
-              type="button"
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
+              href={tabHref}
               className={`px-3 py-2.5 text-sm font-medium transition ${
                 mode === m
                   ? "bg-panel text-foreground"
@@ -81,8 +90,9 @@ function LoginPageInner() {
               }`}
             >
               {m === "login" ? "Sign in" : "Register"}
-            </button>
-          ))}
+            </a>
+            );
+          })}
         </div>
 
         <form onSubmit={submit} className="p-5">

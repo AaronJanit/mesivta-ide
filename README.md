@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Local setup
+
+Copy `.env.example` to `.env.local` and fill in the Supabase project URL, service-role key, and a random `SESSION_SECRET`. Run the SQL in `supabase/schema.sql` in the same Supabase project before using registration or login.
+
+The service-role key is server-only. Do not commit `.env.local` or expose that key in browser code.
+
 ## Getting Started
 
 First, run the development server:

@@ -36,19 +36,17 @@ interface CodingGuideProps {
 }
 
 export function CodingGuide({ onClose }: CodingGuideProps) {
-  const [activeLessonId, setActiveLessonId] = useState<string>(FLAT_LESSONS[0].id);
+  const [activeLessonId, setActiveLessonId] = useState<string>(() => {
+    if (typeof window === "undefined") return FLAT_LESSONS[0].id;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved && FLAT_LESSONS.some((lesson) => lesson.id === saved)
+      ? saved
+      : FLAT_LESSONS[0].id;
+  });
   const [search, setSearch] = useState("");
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const lessonRefs = useRef<Map<string, HTMLElement>>(new Map());
-
-  // Restore last opened lesson.
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    if (saved && FLAT_LESSONS.some((l) => l.id === saved)) {
-      setActiveLessonId(saved);
-    }
-  }, []);
 
   // Persist last opened lesson.
   useEffect(() => {
@@ -289,12 +287,12 @@ function lessonMatches(lesson: Lesson, q: string): boolean {
   );
 }
 
-function LessonView({
+export function LessonView({
   lesson,
   registerRef,
 }: {
   lesson: FlatLesson;
-  registerRef: (el: HTMLElement | null) => void;
+  registerRef?: (el: HTMLElement | null) => void;
 }) {
   const Icon = SECTION_ICONS[
     GUIDE_SECTIONS.find((s) => s.id === lesson.sectionId)?.icon ?? ""
