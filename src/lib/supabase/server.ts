@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createClient as createBrowserClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import WebSocket from "ws";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_KEY!;
@@ -18,8 +17,6 @@ export function createAdminClient(): SupabaseClient {
   }
   return createBrowserClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
-    // Node 20 has no native WebSocket — pass ws for realtime if ever needed.
-    realtime: { transport: WebSocket },
   });
 }
 
