@@ -2,7 +2,18 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Local setup
 
-Copy `.env.example` to `.env.local` and fill in the Supabase project URL, service-role key, and a random `SESSION_SECRET`. Run the SQL in `supabase/schema.sql` in the same Supabase project before using registration or login.
+Copy `.env.example` to `.env.local` and fill in the Supabase project URL, service-role key, and a random `SESSION_SECRET`. Run the SQL in `supabase/schema.sql` in the same Supabase project. On a project that still has the old username/password `users` table, run `supabase/migrate-to-code-login.sql` instead.
+
+## Sign-in codes
+
+There is no registration page. The admin creates users directly in Supabase and hands each student their 4-digit code in person:
+
+- In the Supabase SQL editor run `select create_club_user('name');` — it inserts the user and returns a random 4-digit code, or
+- insert a `users` row in the Table editor and leave `code` empty — a random code is generated automatically.
+
+To re-check a student's code later: `select username, code from users order by created_at;`
+
+Students enter just the code on the sign-in page. Everything they make (projects, files, AI chats) is saved to their account.
 
 The service-role key is server-only. Do not commit `.env.local` or expose that key in browser code.
 

@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "webide_session";
@@ -51,14 +50,6 @@ async function verify(token: string): Promise<SessionPayload | null> {
   } catch {
     return null;
   }
-}
-
-export async function hashPassword(plain: string): Promise<string> {
-  return bcrypt.hash(plain, 10);
-}
-
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(plain, hash);
 }
 
 export async function setSession(payload: { userId: string; username: string }) {

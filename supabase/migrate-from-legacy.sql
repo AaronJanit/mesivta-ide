@@ -9,12 +9,47 @@ drop table if exists projects cascade;
 drop table if exists users cascade;
 
 -- 2. Recreate everything (matches supabase/schema.sql)
+-- Random 4-digit sign-in code, e.g. '0423'
+create or replace function generate_code() returns text
+  language sql volatile as $$
+  select lpad((floor(random() * 10000))::int::text, 4, '0');
+$$;
+
 create table users (
   id uuid primary key default gen_random_uuid(),
   username text unique not null,
-  password text not null,            -- bcrypt hash
+  code text unique not null default generate_code(),  -- 4-digit code, given to the student in person
   created_at timestamptz default now()
 );
+
+-- Admin helper: create a user with a random code and get the code back.
+-- Run in the Supabase SQL editor:  select create_club_user('chaim');
+create or replace function create_club_user(p_username text) returns text
+  language plpgsql as $$
+declare
+  v_username text := btrim(p_username);
+  v_code text;
+begin
+  if v_username is null or char_length(v_username) = 0 then
+    raise exception 'username is required';
+  end if;
+  if char_length(v_username) > 32 then
+    raise exception 'username must be at most 32 characters';
+  end if;
+  if exists (select 1 from users u where u.username = v_username) then
+    raise exception 'username % is already taken', v_username;
+  end if;
+  loop
+    v_code := generate_code();
+    begin
+      insert into users (username, code) values (v_username, v_code);
+      return v_code;
+    exception when unique_violation then
+      -- code collision; pick a fresh random code and retry
+      null;
+    end;
+  end loop;
+end $$;
 
 create table projects (
   id uuid primary key default gen_random_uuid(),
@@ -56,6 +91,16 @@ create index files_project_idx on files (project_id);
 create index files_parent_idx on files (parent_folder_id);
 create index chats_project_idx on chats (project_id);
 create index messages_chat_idx on messages (chat_id);
+
+-- Lock down anonymous API access (see schema.sql for the rationale).
+alter table users enable row level security;
+alter table projects enable row level security;
+alter table files enable row level security;
+alter table chats enable row level security;
+alter table messages enable row level security;
+
+revoke execute on function generate_code() from public, anon, authenticated;
+revoke execute on function create_club_user(text) from public, anon, authenticated;
 
 -- auto-touch updated_at
 create or replace function touch_updated_at() returns trigger as $$

@@ -52,10 +52,10 @@ export default function DashboardPage() {
           <div className="flex-1" />
           <span className="hidden text-xs text-muted sm:block">Open workspace</span>
           <a
-            href="/login"
+            href="/ide"
             className="rounded border border-border px-3 py-1.5 text-xs text-muted transition hover:border-border-strong hover:text-foreground"
           >
-            Sign in
+            Open IDE
           </a>
         </div>
       </header>

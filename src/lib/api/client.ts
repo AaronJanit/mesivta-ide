@@ -49,10 +49,8 @@ export interface MessageDTO {
 export const api = {
   auth: {
     me: () => req<{ user: UserDTO | null }>("/api/auth/me"),
-    login: (username: string, password: string) =>
-      req<{ user: UserDTO }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
-    register: (username: string, password: string) =>
-      req<{ user: UserDTO }>("/api/auth/register", { method: "POST", body: JSON.stringify({ username, password }) }),
+    login: (code: string) =>
+      req<{ user: UserDTO }>("/api/auth/login", { method: "POST", body: JSON.stringify({ code }) }),
     logout: () => req<{ ok: true }>("/api/auth/logout", { method: "POST" }),
   },
   projects: {

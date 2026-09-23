@@ -7,8 +7,7 @@ interface AuthState {
   user: UserDTO | null;
   loading: boolean;
   loadUser: () => Promise<void>;
-  login: (u: string, p: string) => Promise<void>;
-  register: (u: string, p: string) => Promise<void>;
+  login: (code: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -24,12 +23,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, loading: false });
     }
   },
-  login: async (username, password) => {
-    const { user } = await api.auth.login(username, password);
-    set({ user });
-  },
-  register: async (username, password) => {
-    const { user } = await api.auth.register(username, password);
+  login: async (code) => {
+    const { user } = await api.auth.login(code);
     set({ user });
   },
   logout: async () => {

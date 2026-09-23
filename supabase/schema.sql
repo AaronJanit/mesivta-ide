@@ -1,12 +1,47 @@
 -- Run in the Supabase SQL editor for project imrbzsjazjdkaiofqmzu.
 
--- users (custom auth — passwords are bcrypt hashes from the app)
+-- Random 4-digit sign-in code, e.g. '0423'
+create or replace function generate_code() returns text
+  language sql volatile as $$
+  select lpad((floor(random() * 10000))::int::text, 4, '0');
+$$;
+
+-- users (custom auth — sign-in is a 4-digit code created by the admin)
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   username text unique not null,
-  password text not null,            -- bcrypt hash
+  code text unique not null default generate_code(),  -- 4-digit code, given to the student in person
   created_at timestamptz default now()
 );
+
+-- Admin helper: create a user with a random code and get the code back.
+-- Run in the Supabase SQL editor:  select create_club_user('chaim');
+create or replace function create_club_user(p_username text) returns text
+  language plpgsql as $$
+declare
+  v_username text := btrim(p_username);
+  v_code text;
+begin
+  if v_username is null or char_length(v_username) = 0 then
+    raise exception 'username is required';
+  end if;
+  if char_length(v_username) > 32 then
+    raise exception 'username must be at most 32 characters';
+  end if;
+  if exists (select 1 from users u where u.username = v_username) then
+    raise exception 'username % is already taken', v_username;
+  end if;
+  loop
+    v_code := generate_code();
+    begin
+      insert into users (username, code) values (v_username, v_code);
+      return v_code;
+    exception when unique_violation then
+      -- code collision; pick a fresh random code and retry
+      null;
+    end;
+  end loop;
+end $$;
 
 -- projects
 create table if not exists projects (
@@ -66,7 +101,18 @@ begin
   end loop;
 end $$;
 
--- NOTE on RLS: This app uses custom session-cookie auth (no Supabase Auth).
--- Every API route validates the session server-side, so access is already gated.
--- RLS is left OFF for simplicity on this self-hosted single-user IDE. Enable
--- with policies that join projects.user_id if you later need defense-in-depth.
+-- Lock down anonymous API access. The app uses the service-role key, which
+-- bypasses RLS, so this changes nothing for the app — but it stops anyone
+-- holding the anon key (it ships in the browser bundle) from reading users'
+-- sign-in codes or data through the REST API. No policies = zero rows for
+-- anon/authenticated.
+alter table users enable row level security;
+alter table projects enable row level security;
+alter table files enable row level security;
+alter table chats enable row level security;
+alter table messages enable row level security;
+
+-- Keep the helper functions callable only from the SQL editor (admin), not
+-- through the public REST API.
+revoke execute on function generate_code() from public, anon, authenticated;
+revoke execute on function create_club_user(text) from public, anon, authenticated;

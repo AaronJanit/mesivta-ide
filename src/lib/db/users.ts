@@ -5,14 +5,16 @@ function client() {
   return createAdminClient();
 }
 
-export async function getUserByUsername(username: string): Promise<(User & { password: string }) | null> {
+// Users are created by the admin directly in Supabase (users table); each
+// has a unique 4-digit `code` handed to the student in person.
+export async function getUserByCode(code: string): Promise<User | null> {
   const { data, error } = await client()
     .from("users")
-    .select("*")
-    .eq("username", username)
+    .select("id, username, created_at")
+    .eq("code", code)
     .maybeSingle();
   if (error) throw error;
-  return (data as (User & { password: string }) | null) ?? null;
+  return (data as User | null) ?? null;
 }
 
 export async function getUserById(id: string): Promise<User | null> {
@@ -23,14 +25,4 @@ export async function getUserById(id: string): Promise<User | null> {
     .maybeSingle();
   if (error) throw error;
   return (data as User) ?? null;
-}
-
-export async function createUser(username: string, passwordHash: string): Promise<User> {
-  const { data, error } = await client()
-    .from("users")
-    .insert({ username, password: passwordHash })
-    .select("id, username, created_at")
-    .single();
-  if (error) throw error;
-  return data as User;
 }

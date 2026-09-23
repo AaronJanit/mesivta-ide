@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/register"];
-const PUBLIC_API = ["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/me"];
+const PUBLIC_PATHS = ["/login"];
+const PUBLIC_API = ["/api/auth/login", "/api/auth/logout", "/api/auth/me"];
 
 // Keep workspace pages easy to inspect locally when Supabase credentials are
 // not present. Production uses the normal authenticated workspace flow.

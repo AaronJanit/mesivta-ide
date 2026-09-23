@@ -5,40 +5,32 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
 
-export default function LoginPage({ initialMode = "login" }: { initialMode?: "login" | "register" } = {}) {
+export default function LoginPage() {
   return (
     <Suspense>
-      <LoginPageInner initialMode={initialMode} />
+      <LoginPageInner />
     </Suspense>
   );
 }
 
-function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) {
+function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedRedirect = searchParams.get("redirect");
   const redirectTo = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
     ? requestedRedirect
     : "/dashboard";
-  const queryMode = searchParams.get("mode");
-  const [mode] = useState<"login" | "register">(
-    queryMode === "register" || queryMode === "login" ? queryMode : initialMode,
-  );
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError(null);
     setBusy(true);
     try {
-      if (mode === "login") {
-        await api.auth.login(username, password);
-      } else {
-        await api.auth.register(username, password);
-      }
+      await api.auth.login(code);
       router.replace(redirectTo);
       router.refresh();
     } catch (err) {
@@ -63,7 +55,7 @@ function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) 
         </Link>
         <div className="flex flex-col leading-none">
           <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-5xl font-bold tracking-tight text-transparent">
-            Mesivta IDE
+            Mesivta Code
           </span>
           <span className="mt-2 text-sm font-medium uppercase tracking-[0.25em] text-muted">
             2026-7 Coding Club
@@ -71,53 +63,30 @@ function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) 
         </div>
       </div>
 
-      {/* Auth card */}
+      {/* Sign-in card */}
       <div className="w-[340px] overflow-hidden rounded-md border border-border bg-panel shadow-md">
-        {/* Tabs */}
-        <div className="grid grid-cols-2 border-b border-border bg-panel-2">
-          {(["login", "register"] as const).map((m) => {
-            const tabHref = m === "register"
-              ? `/register?redirect=${encodeURIComponent(redirectTo)}`
-              : `/login?redirect=${encodeURIComponent(redirectTo)}`;
-            return (
-            <a
-              key={m}
-              href={tabHref}
-              className={`px-3 py-2.5 text-sm font-medium transition ${
-                mode === m
-                  ? "bg-panel text-foreground"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {m === "login" ? "Sign in" : "Register"}
-            </a>
-            );
-          })}
+        <div className="border-b border-border bg-panel-2 px-5 py-2.5 text-sm font-medium text-foreground">
+          Sign in
         </div>
 
         <form onSubmit={submit} className="p-5">
           <p className="mb-4 text-xs text-muted">
-            {mode === "login" ? "Welcome back." : "Start coding in seconds."}
+            Enter your 4-digit code to open your workspace.
           </p>
 
-          <label className="mb-1 block text-xs text-muted">Username</label>
+          <label htmlFor="signin-code" className="mb-1 block text-xs text-muted">
+            Your code
+          </label>
           <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="signin-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
             autoFocus
-            className="mb-3 w-full rounded border border-border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-accent"
-            placeholder="username"
-            autoComplete="username"
-          />
-
-          <label className="mb-1 block text-xs text-muted">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mb-4 w-full rounded border border-border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-accent"
-            placeholder="••••••••"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="0000"
+            disabled={busy}
+            className="mb-4 w-full rounded border border-border bg-background px-2.5 py-2 text-center font-mono text-2xl tracking-[0.6em] text-foreground outline-none focus:border-accent disabled:opacity-50"
           />
 
           {error && (
@@ -128,11 +97,15 @@ function LoginPageInner({ initialMode }: { initialMode: "login" | "register" }) 
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || code.length !== 4}
             className="w-full rounded bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? "…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? "…" : "Sign in"}
           </button>
+
+          <p className="mt-4 text-center text-[11px] text-muted-2">
+            Lost your code? Ask the club admin for it.
+          </p>
         </form>
       </div>
     </div>
