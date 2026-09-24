@@ -94,7 +94,7 @@ function DocsPageInner() {
       ) : (
         <main className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-6 py-10">
-            <section className="mb-10 max-w-2xl">
+            <section data-tour="docs-hero" className="mb-10 max-w-2xl">
               <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 <BookOpen className="size-4" />
                 Learning library
@@ -152,6 +152,7 @@ function DocsPageInner() {
                   <a
                     key={doc.title}
                     href="/docs?guide=mesivta"
+                    data-tour="docs-guide-card"
                     className="group min-h-64 rounded-lg border border-accent/40 bg-panel p-6 text-left transition hover:-translate-y-0.5 hover:border-accent hover:bg-panel-2"
                   >
                     {content}

@@ -44,6 +44,26 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
     [],
   );
 
+  // Intro-tour hooks: the tour dispatches window events to open specific IDE
+  // views so it can spotlight them (guide view, debug view, terminal panel).
+  useEffect(() => {
+    const openTerminal = () => {
+      useTerminalStore.getState().openPanel();
+      setActivityView((v) => (v === "guide" || v === "debug" ? "explorer" : v));
+      setExplorerVisible(true);
+    };
+    const openDebug = () => setActivityView("debug");
+    const openGuide = () => setActivityView("guide");
+    window.addEventListener("tour:open-terminal", openTerminal);
+    window.addEventListener("tour:open-debug", openDebug);
+    window.addEventListener("tour:open-guide", openGuide);
+    return () => {
+      window.removeEventListener("tour:open-terminal", openTerminal);
+      window.removeEventListener("tour:open-debug", openDebug);
+      window.removeEventListener("tour:open-guide", openGuide);
+    };
+  }, []);
+
   // Keep the debug store's scan result fresh in the background so the
   // pulsing badge on the Debug activity-bar icon reflects live state.
   useBackgroundDebugScan();
@@ -62,13 +82,25 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
       {/* Main layout */}
       <div className="flex-1 overflow-hidden">
         {showGuide ? (
-          // Guide view: only the icon activity bar + the guide filling the
-          // rest. No file-tree sidebar, no AI chatbot panel, no resizers.
+          // Guide view: icon activity bar + the guide, with the AI chatbot
+          // docked on the right like the debug view.
           <div className="flex h-full">
             <ActivityBar active={activityView} onSelect={handleActivitySelect} />
-            <div className="h-full flex-1 overflow-hidden">
-              <CodingGuide onClose={() => setActivityView("explorer")} />
-            </div>
+            <PanelGroup orientation="horizontal" id="ide-guide" className="flex-1">
+              <Panel minSize="30%">
+                <div data-tour="ide-guide" className="h-full overflow-hidden">
+                  <CodingGuide onClose={() => setActivityView("explorer")} />
+                </div>
+              </Panel>
+              {aiChatVisible && (
+                <>
+                  <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
+                  <Panel defaultSize="28%" minSize="18%" maxSize="45%">
+                    <RightDock />
+                  </Panel>
+                </>
+              )}
+            </PanelGroup>
           </div>
         ) : showDebug ? (
           // Debug view: ActivityBar + DebugPanel filling the width up to the
@@ -77,7 +109,9 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
             <ActivityBar active={activityView} onSelect={handleActivitySelect} />
             <PanelGroup orientation="horizontal" id="ide-debug" className="flex-1">
               <Panel minSize="30%">
-                <DebugPanel onClose={() => setActivityView("explorer")} />
+                <div data-tour="ide-debug" className="h-full">
+                  <DebugPanel onClose={() => setActivityView("explorer")} />
+                </div>
               </Panel>
               {aiChatVisible && (
                 <>

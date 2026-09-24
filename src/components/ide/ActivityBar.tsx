@@ -107,6 +107,7 @@ export function ActivityBar({ active, onSelect }: ActivityBarProps) {
 
   return (
     <nav
+      data-tour="ide-activity-bar"
       className="flex w-12 shrink-0 flex-col items-stretch border-r border-border bg-panel"
       aria-label="Activity Bar"
     >

@@ -8,6 +8,7 @@ import { useFileStore } from "@/stores/useFileStore";
 import { iconForFile } from "@/lib/fileIcons";
 import { WelcomePanel } from "./WelcomePanel";
 import { LivePreview } from "@/components/preview/LivePreview";
+import { MarkdownPreview } from "./MarkdownPreview";
 import { cn } from "@/lib/cn";
 
 // Monaco is browser-only. SSR must be disabled.
@@ -26,10 +27,15 @@ const ICONS = {
   braces: Braces,
 } as const;
 
-function FileTypeIcon({ name }: { name: string }) {
-  const spec = iconForFile(name);
+function FileTypeIcon({ name: _name }: { name: string }) {
+  const spec = iconForFile(_name);
   const Cmp = ICONS[spec.icon];
   return <Cmp className="size-3.5" />;
+}
+
+function isMarkdownFile(name: string): boolean {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return ext === "md" || ext === "mdx";
 }
 
 export function EditorArea() {
@@ -53,7 +59,7 @@ export function EditorArea() {
   const activeTab = tabs.find((t) => t.fileId === activeFileId) ?? null;
 
   return (
-    <div className="flex h-full flex-col bg-editor">
+    <div data-tour="ide-editor" className="flex h-full flex-col bg-editor">
       {/* Tab strip */}
       <div className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-border bg-panel">
         {tabs.map((t) => (
@@ -74,16 +80,37 @@ export function EditorArea() {
         ) : activeTab?.isPreview ? (
           <LivePreview />
         ) : activeTab ? (
-          <MonacoInner
-            key={activeTab.fileId}
-            fileId={activeTab.fileId}
-            value={activeTab.content}
-            language={activeTab.language}
-            onChange={(val) => {
-              setContent(activeTab.fileId, val);
-              scheduleSave(activeTab.fileId, val);
-            }}
-          />
+          isMarkdownFile(activeTab.name) ? (
+            // Markdown files get a live rendered preview beside the editor.
+            <div className="flex h-full">
+              <div className="h-full min-w-0 flex-1">
+                <MonacoInner
+                  key={activeTab.fileId}
+                  fileId={activeTab.fileId}
+                  value={activeTab.content}
+                  language={activeTab.language}
+                  onChange={(val) => {
+                    setContent(activeTab.fileId, val);
+                    scheduleSave(activeTab.fileId, val);
+                  }}
+                />
+              </div>
+              <div className="h-full w-[45%] min-w-56 max-w-[55%] shrink-0">
+                <MarkdownPreview content={activeTab.content} fileName={activeTab.name} />
+              </div>
+            </div>
+          ) : (
+            <MonacoInner
+              key={activeTab.fileId}
+              fileId={activeTab.fileId}
+              value={activeTab.content}
+              language={activeTab.language}
+              onChange={(val) => {
+                setContent(activeTab.fileId, val);
+                scheduleSave(activeTab.fileId, val);
+              }}
+            />
+          )
         ) : (
           <EmptyState />
         )}

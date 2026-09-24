@@ -62,7 +62,7 @@ export default async function OverviewPage() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 py-10">
         {/* Hero */}
-        <section className="mb-10 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
+        <section data-tour="overview-hero" className="mb-10 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <Activity className="size-4" />
             Overview
@@ -100,6 +100,7 @@ function ClubActivityCard({ stats }: { stats: ClubStats }) {
 
   return (
     <section
+      data-tour="overview-activity"
       aria-label="Club activity"
       className="group relative overflow-hidden rounded-xl border border-border bg-panel/70 p-5 backdrop-blur-sm"
     >

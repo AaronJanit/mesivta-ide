@@ -1,17 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
   CheckSquare,
+  Compass,
   ExternalLink,
   FileText,
   Flame,
   GraduationCap,
   LayoutDashboard,
   Sparkles,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const learningLinks = [
   {
@@ -33,6 +37,14 @@ const learningLinks = [
 ];
 
 export default function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const loadUser = useAuthStore((s) => s.loadUser);
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    if (!user) void loadUser();
+  }, [user, loadUser]);
+
   return (
     <main className="relative h-screen overflow-y-auto bg-background text-foreground">
       {/* Ambient background: faint grid + accent glows (fixed = covers viewport while scrolling) */}
@@ -78,16 +90,61 @@ export default function DashboardPage() {
       </header>
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-12">
-        <section className="mb-12 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
+        <section data-tour="hero" className="mb-12 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <LayoutDashboard className="size-4" />
             Dashboard
           </div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your coding workspace</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Your coding workspace{user ? <span className="text-accent">, {user.username}</span> : null}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-muted">
             Choose where to learn, build, or pick up your next piece of work.
           </p>
         </section>
+
+        {/* Get started banner (dismissible) */}
+        {showIntro && (
+          <section
+            data-tour="get-started"
+            aria-label="Get started"
+            className="group relative mb-8 flex flex-wrap items-center gap-4 overflow-hidden rounded-xl border border-accent/40 bg-panel/80 p-5 backdrop-blur-sm animate-[signInCardIn_0.5s_ease-out_both]"
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.55)] to-transparent"
+            />
+            <span className="rounded-lg bg-accent-soft p-2.5 text-accent ring-1 ring-[hsl(var(--accent)/0.25)]">
+              <Compass className="size-5" />
+            </span>
+            <div className="min-w-48 flex-1">
+              <h2 className="font-semibold">Get started</h2>
+              <p className="mt-0.5 text-xs leading-5 text-muted">
+                First time here? Take the intro guide to learn your way around.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowIntro(false);
+                window.dispatchEvent(new Event("mesivta:start-intro-tour"));
+              }}
+              className="group/cta inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-accent-fg shadow-[0_1px_10px_rgba(0,179,255,0.3)] transition hover:brightness-110 active:scale-[0.98]"
+            >
+              Take the intro guide
+              <ArrowRight className="size-3.5 transition-transform group-hover/cta:translate-x-0.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowIntro(false)}
+              aria-label="Dismiss"
+              title="Dismiss"
+              className="rounded p-1.5 text-muted transition hover:bg-panel-2 hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          </section>
+        )}
 
         <section className="mb-12">
           <div className="mb-4">
@@ -102,6 +159,7 @@ export default function DashboardPage() {
               accent="cyan"
               href="/ide"
               action="Open IDE"
+              tourId="card-ide"
             />
             <WorkspaceCard
               title="Overview"
@@ -110,6 +168,7 @@ export default function DashboardPage() {
               accent="amber"
               href="/overview"
               action="View overview"
+              tourId="card-overview"
             />
             <WorkspaceCard
               title="Mesivta Docs"
@@ -118,6 +177,7 @@ export default function DashboardPage() {
               accent="green"
               href="/docs"
               action="Open docs"
+              tourId="card-docs"
             />
             <WorkspaceCard
               title="My progress"
@@ -126,11 +186,12 @@ export default function DashboardPage() {
               accent="cyan"
               href="/challenges#completed"
               action="View progress"
+              tourId="card-progress"
             />
           </div>
         </section>
 
-        <section>
+        <section data-tour="learning-library">
           <div className="mb-4">
             <h2 className="text-lg font-semibold">Learning library</h2>
             <p className="mt-1 text-xs text-muted">Mesivta guides and trusted places to learn more.</p>
@@ -220,6 +281,7 @@ function WorkspaceCard({
   accent,
   action,
   href,
+  tourId,
 }: {
   title: string;
   description: string;
@@ -227,6 +289,7 @@ function WorkspaceCard({
   accent: "cyan" | "amber" | "green";
   action: string;
   href: string;
+  tourId?: string;
 }) {
   const accentClass = {
     cyan: "bg-accent-soft text-accent ring-[hsl(var(--accent)/0.25)]",
@@ -237,6 +300,7 @@ function WorkspaceCard({
   return (
     <a
       href={href}
+      data-tour={tourId}
       className="group relative flex min-h-48 flex-col items-start overflow-hidden rounded-xl border border-border bg-panel/70 p-5 text-left backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:border-accent/50 hover:bg-panel-2/70 hover:shadow-pop"
     >
       <div

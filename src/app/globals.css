@@ -156,6 +156,19 @@ body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Intro tour: hide everything after each spotlighted element's own row.
+   Applied on <html data-tour-active> so only tour targets and the elements
+   directly above them (their section context) stay relevant. */
+html[data-tour-active] [data-tour-hide-after],
+html[data-tour-active] [data-tour-hide-after] * {
+  visibility: hidden;
+}
+/* Keep spotlight targets visible even inside hidden regions */
+html[data-tour-active] [data-tour-hide-after] [data-tour],
+html[data-tour-active] [data-tour-hide-after] [data-tour] * {
+  visibility: visible;
+}
+
 @keyframes signInShake {
   0%, 100% { transform: translateX(0); }
   20%      { transform: translateX(-5px); }

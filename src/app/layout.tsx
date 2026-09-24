@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { TourHost } from "@/components/guide/TourHost";
 
 export const metadata: Metadata = {
   title: "IDE",
@@ -19,7 +20,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/@fontsource/phantom-sans@5.0.0/index.min.css"
         />
       </head>
-      <body className="h-full overflow-hidden bg-background text-foreground">{children}</body>
+      <body className="h-full overflow-hidden bg-background text-foreground">
+        {children}
+        <TourHost />
+      </body>
     </html>
   );
 }

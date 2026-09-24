@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { MessageSquare, BookOpen, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { AssistantPanel } from "@/components/ai/AssistantPanel";
-import { CodingGuide } from "@/components/guide/CodingGuide";
+import { DocsPane } from "@/components/ide/DocsPane";
 
 type DockTab = "chat" | "docs";
 
@@ -76,7 +76,7 @@ export function RightDock() {
         hidden={tab !== "docs"}
         className="min-h-0 flex-1 overflow-hidden"
       >
-        <CodingGuide compact />
+        <DocsPane />
       </div>
     </div>
   );

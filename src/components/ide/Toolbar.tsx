@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink, LayoutDashboard, FileArchive, Download } from "lucide-react";
 import { getEditor, useEditorBridge } from "@/lib/editorBridge";
 import { useTheme } from "@/hooks/useTheme";
+import { ZipUploadModal } from "./ZipUploadModal";
+import { ZipExportModal } from "./ZipExportModal";
 
 interface ToolbarProps {
   aiChatVisible: boolean;
@@ -15,6 +17,8 @@ interface ToolbarProps {
 
 export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onToggleExplorer, onLogout }: ToolbarProps) {
   const [viewOpen, setViewOpen] = useState(false);
+  const [zipOpen, setZipOpen] = useState(false);
+  const [zipExportOpen, setZipExportOpen] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const { mode, toggle } = useTheme();
   const isLight = mode === "light";
@@ -30,7 +34,7 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
   }, []);
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
+    <div data-tour="ide-toolbar" className="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-panel px-3">
       {/* Logo — Mesivta IDE text only, same gradient style as login, smaller.
           Uses foreground (white-dark / dark-light) so it adapts to light mode. */}
       <a
@@ -69,6 +73,28 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
       </div>
 
       <div className="mx-2 h-4 w-px bg-border" />
+
+      {/* Upload ZIP / Download ZIP */}
+      <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background/60 p-0.5">
+        <button
+          type="button"
+          onClick={() => setZipOpen(true)}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-panel-2 hover:text-foreground"
+          title="Upload a .zip of files into a project"
+        >
+          <FileArchive className="size-3.5" />
+          <span>Upload ZIP</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setZipExportOpen(true)}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-panel-2 hover:text-foreground"
+          title="Download the current project as a .zip"
+        >
+          <Download className="size-3.5" />
+          <span>Download ZIP</span>
+        </button>
+      </div>
 
       {/* View menu */}
       <div className="relative" ref={viewRef}>
@@ -174,6 +200,9 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
         <LogOut className="size-3.5" />
         <span>Sign out</span>
       </button>
+
+      {zipOpen && <ZipUploadModal onClose={() => setZipOpen(false)} />}
+      {zipExportOpen && <ZipExportModal onClose={() => setZipExportOpen(false)} />}
     </div>
   );
 }

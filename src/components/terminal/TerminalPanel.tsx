@@ -257,7 +257,7 @@ export function TerminalPanel() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex h-full flex-col bg-[#0d0d12]">
+    <div data-tour="ide-terminal" className="flex h-full flex-col bg-[#0d0d12]">
       <div ref={termRef} className="flex-1 overflow-hidden px-1 pt-1" />
     </div>
   );

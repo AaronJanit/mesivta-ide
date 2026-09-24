@@ -193,7 +193,7 @@ export default function ChallengesPage() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 py-12">
         {/* Hero */}
-        <section className="mb-10 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
+        <section data-tour="challenges-hero" className="mb-10 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <Sparkles className="size-4" />
             Current project
@@ -208,6 +208,7 @@ export default function ChallengesPage() {
 
         {/* Progress card */}
         <section
+          data-tour="challenges-progress"
           aria-label="Progress"
           className="group relative mb-12 overflow-hidden rounded-xl border border-border bg-panel/70 p-5 backdrop-blur-sm"
         >
@@ -240,7 +241,7 @@ export default function ChallengesPage() {
         </section>
 
         {/* Vibes stages */}
-        <section aria-label="Vibes stages" className="mb-12">
+        <section aria-label="Vibes stages" className="mb-12" data-tour-hide-after="challenges-progress">
           <ol className="relative space-y-6 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-border">
             {VIBES_STAGES.map((stage, index) => {
               const done = stage.stageId ? stages[stage.stageId]?.done ?? false : progressPercent === 100;
