@@ -1,3 +1,14 @@
+# Mesivta Code
+>This is the web IDE for the weekly HackClub hosted by Manchester Mesivta
+For technical setup details, see below.
+
+## Contributing
+
+If you have a feature idea or something you want to add, fork this repo into your account and add your feature. After committing your changes and pushing, create a pull request to the 'dev' branch.
+While in local development, you might want to remove the auth layer. Make sure to add it back in when making a pull request.
+
+# Technical Details
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Local setup

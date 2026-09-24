@@ -8,10 +8,12 @@ import { useTheme } from "@/hooks/useTheme";
 interface ToolbarProps {
   aiChatVisible: boolean;
   onToggleAiChat: () => void;
+  explorerVisible: boolean;
+  onToggleExplorer: () => void;
   onLogout: () => void;
 }
 
-export function Toolbar({ aiChatVisible, onToggleAiChat, onLogout }: ToolbarProps) {
+export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onToggleExplorer, onLogout }: ToolbarProps) {
   const [viewOpen, setViewOpen] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const { mode, toggle } = useTheme();
@@ -97,6 +99,22 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, onLogout }: ToolbarProp
               <span
                 className={`flex h-4 w-7 items-center rounded-full px-0.5 transition ${
                   aiChatVisible ? "bg-accent justify-end" : "bg-border justify-start"
+                }`}
+              >
+                <span className="size-3 rounded-full bg-white" />
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onToggleExplorer();
+              }}
+              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs text-foreground transition hover:bg-panel-2"
+            >
+              <span>File Explorer</span>
+              <span
+                className={`flex h-4 w-7 items-center rounded-full px-0.5 transition ${
+                  explorerVisible ? "bg-accent justify-end" : "bg-border justify-start"
                 }`}
               >
                 <span className="size-3 rounded-full bg-white" />

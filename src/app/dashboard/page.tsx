@@ -5,6 +5,7 @@ import {
   BookOpen,
   CheckSquare,
   ExternalLink,
+  FileText,
   Flame,
   GraduationCap,
   LayoutDashboard,
@@ -22,46 +23,62 @@ const learningLinks = [
     label: "Open CodeHS",
   },
   {
-    title: "Replit",
-    description: "Collaborative workspaces for larger coding projects.",
-    href: "https://replit.com/",
+    title: "W3Schools",
+    description: "Tutorials and references for HTML, CSS, JavaScript, and more.",
+    href: "https://www.w3schools.com/",
     icon: Sparkles,
     internal: false,
-    label: "Open Replit",
+    label: "Open W3Schools",
   },
 ];
 
 export default function DashboardPage() {
   return (
-    <main className="h-screen overflow-y-auto bg-background text-foreground">
-      <header className="border-b border-border bg-panel">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-5">
-          <Link href="/" aria-label="Go to Mesivta Code home">
+    <main className="relative h-screen overflow-y-auto bg-background text-foreground">
+      {/* Ambient background: faint grid + accent glows (fixed = covers viewport while scrolling) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0">
+        <div className="ambient-grid absolute inset-0" />
+        <div className="absolute -top-32 left-1/2 h-[380px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,hsl(var(--accent)/0.13),transparent)] blur-2xl" />
+        <div className="absolute top-1/3 -right-28 h-[360px] w-[520px] rounded-full bg-[radial-gradient(closest-side,hsl(262_60%_50%/0.12),transparent)] blur-2xl" />
+        <div className="absolute bottom-0 -left-28 h-[320px] w-[460px] rounded-full bg-[radial-gradient(closest-side,hsl(var(--accent)/0.08),transparent)] blur-2xl" />
+      </div>
+
+      <header className="sticky top-0 z-20 border-b border-border bg-panel/80 backdrop-blur-xl">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.45)] to-transparent"
+        />
+        <div className="relative mx-auto flex max-w-6xl items-center gap-4 px-6 py-4">
+          <Link href="/" aria-label="Go to Mesivta Code home" className="flex items-center gap-3">
             <img
               src="/white-logo.png"
               alt="Mesivta Code"
-              width={64}
-              height={74}
+              width={56}
+              height={65}
               className="drop-shadow-[0_2px_8px_rgba(0,179,255,0.3)]"
             />
+            <div className="flex flex-col leading-none">
+              <span className="bg-gradient-to-r from-white via-white to-[hsl(var(--accent))] bg-clip-text text-xl font-bold tracking-tight text-transparent">
+                Mesivta Code
+              </span>
+              <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.25em] text-muted">
+                2026-7 Coding Club
+              </span>
+            </div>
           </Link>
-          <div>
-            <p className="text-xl font-semibold tracking-tight">Mesivta Code</p>
-            <p className="text-xs text-muted-2">Coding club workspace</p>
-          </div>
           <div className="flex-1" />
-          <span className="hidden text-xs text-muted sm:block">Open workspace</span>
-          <a
+          <Link
             href="/ide"
-            className="rounded border border-border px-3 py-1.5 text-xs text-muted transition hover:border-border-strong hover:text-foreground"
+            className="group inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-accent-fg shadow-[0_1px_10px_rgba(0,179,255,0.3)] transition hover:brightness-110 hover:shadow-[0_2px_14px_rgba(0,179,255,0.45)] active:scale-[0.98]"
           >
             Open IDE
-          </a>
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <section className="mb-10 max-w-2xl">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-12">
+        <section className="mb-12 max-w-2xl animate-[signInCardIn_0.5s_ease-out_both]">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
             <LayoutDashboard className="size-4" />
             Dashboard
@@ -72,12 +89,12 @@ export default function DashboardPage() {
           </p>
         </section>
 
-        <section className="mb-10">
+        <section className="mb-12">
           <div className="mb-4">
             <h2 className="text-lg font-semibold">Start coding</h2>
             <p className="mt-1 text-xs text-muted">Your main places to work.</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <WorkspaceCard
               title="Mesivta IDE"
               description="Write, preview, and discuss your own projects in Mesivta."
@@ -87,20 +104,20 @@ export default function DashboardPage() {
               action="Open IDE"
             />
             <WorkspaceCard
-              title="Docs"
+              title="Overview"
+              description="A snapshot of club activity, progress, and what's happening now."
+              icon={<CheckSquare className="size-5" />}
+              accent="amber"
+              href="/overview"
+              action="View overview"
+            />
+            <WorkspaceCard
+              title="Mesivta Docs"
               description="Learn HTML, CSS, and JavaScript with the Mesivta coding guide."
               icon={<BookOpen className="size-5" />}
               accent="green"
               href="/docs"
               action="Open docs"
-            />
-            <WorkspaceCard
-              title="Challenges & Sprints"
-              description="See the current task, sprint goals, and work to complete."
-              icon={<CheckSquare className="size-5" />}
-              accent="amber"
-              href="/challenges"
-              action="View work"
             />
             <WorkspaceCard
               title="My progress"
@@ -127,10 +144,14 @@ export default function DashboardPage() {
                   href={link.href}
                   target={link.internal ? undefined : "_blank"}
                   rel={link.internal ? undefined : "noopener noreferrer"}
-                  className="group flex min-h-36 flex-col justify-between rounded-lg border border-border bg-panel p-5 transition hover:-translate-y-0.5 hover:border-accent/50 hover:bg-panel-2"
+                  className="group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-xl border border-border bg-panel/70 p-5 backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:border-accent/50 hover:bg-panel-2/70 hover:shadow-pop"
                 >
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.55)] to-transparent opacity-0 transition duration-200 group-hover:opacity-100"
+                  />
                   <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-md bg-accent-soft p-2 text-accent">
+                    <span className="rounded-md bg-accent-soft p-2 text-accent ring-1 ring-[hsl(var(--accent)/0.25)]">
                       <Icon className="size-5" />
                     </span>
                     {!link.internal && <ExternalLink className="size-4 text-muted-2" />}
@@ -146,6 +167,45 @@ export default function DashboardPage() {
                 </a>
               );
             })}
+
+            {/* Cheatsheets card — links to both PDFs */}
+            <div className="group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-xl border border-border bg-panel/70 p-5 backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:border-accent/50 hover:bg-panel-2/70 hover:shadow-pop">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.55)] to-transparent opacity-0 transition duration-200 group-hover:opacity-100"
+              />
+              <div className="flex items-start justify-between gap-3">
+                <span className="rounded-md bg-accent-soft p-2 text-accent ring-1 ring-[hsl(var(--accent)/0.25)]">
+                  <FileText className="size-5" />
+                </span>
+              </div>
+              <div className="mt-5">
+                <h3 className="font-semibold">Cheatsheets</h3>
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  One-page references to keep handy while you code.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href="/html-cheatsheet.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded border border-accent/40 bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent transition hover:border-accent/70 hover:brightness-110"
+                  >
+                    HTML
+                    <ArrowRight className="size-3" />
+                  </a>
+                  <a
+                    href="/css-cheatsheet.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded border border-accent/40 bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent transition hover:border-accent/70 hover:brightness-110"
+                  >
+                    CSS
+                    <ArrowRight className="size-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -169,17 +229,21 @@ function WorkspaceCard({
   href: string;
 }) {
   const accentClass = {
-    cyan: "bg-accent-soft text-accent",
-    amber: "bg-warning/10 text-warning",
-    green: "bg-success/10 text-success",
+    cyan: "bg-accent-soft text-accent ring-[hsl(var(--accent)/0.25)]",
+    amber: "bg-warning/10 text-warning ring-warning/25",
+    green: "bg-success/10 text-success ring-success/25",
   }[accent];
 
   return (
     <a
       href={href}
-      className="group flex min-h-48 flex-col items-start rounded-lg border border-border bg-panel p-5 text-left transition hover:-translate-y-0.5 hover:border-accent/50 hover:bg-panel-2"
+      className="group relative flex min-h-48 flex-col items-start overflow-hidden rounded-xl border border-border bg-panel/70 p-5 text-left backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:border-accent/50 hover:bg-panel-2/70 hover:shadow-pop"
     >
-      <span className={`rounded-md p-2 ${accentClass}`}>{icon}</span>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.55)] to-transparent opacity-0 transition duration-200 group-hover:opacity-100"
+      />
+      <span className={`rounded-lg p-2 ring-1 ${accentClass}`}>{icon}</span>
       <h3 className="mt-5 font-semibold">{title}</h3>
       <p className="mt-1 flex-1 text-xs leading-5 text-muted">{description}</p>
       <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-accent">

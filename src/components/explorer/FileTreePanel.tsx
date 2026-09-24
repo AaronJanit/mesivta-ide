@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { FilePlus, FolderPlus, RefreshCw, Upload, ChevronDown, ChevronRight, Pencil, Trash2, Check, X } from "lucide-react";
+import { FilePlus, FolderPlus, RefreshCw, Upload, ChevronDown, ChevronRight, Pencil, Trash2, Check, X, PanelLeftClose } from "lucide-react";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { languageForFile } from "@/lib/languages";
 import { iconForFile } from "@/lib/fileIcons";
 import type { FileDTO } from "@/lib/api/client";
+import { ProjectSwitcher } from "@/components/ide/ProjectSwitcher";
 import { ContextMenu, type ContextMenuState } from "./ContextMenu";
 
 interface CreateInputState {
@@ -17,7 +18,7 @@ interface CreateInputState {
   name: string;
 }
 
-export function FileTreePanel() {
+export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
   const current = useProjectStore((s) => s.current);
   const { tree, loading, loadFiles, createFile, updateFile, deleteFile } = useFileStore();
   const open = useEditorStore((s) => s.open);
@@ -178,6 +179,11 @@ export function FileTreePanel() {
       onDragLeave={() => setDragOver(false)}
       onContextMenu={(e) => onContextMenu(e, null)}
     >
+      {/* Project switcher row */}
+      <div className="flex h-9 shrink-0 items-center border-b border-border px-2 py-1">
+        <ProjectSwitcher />
+      </div>
+
       {/* Header */}
       <div className="flex h-9 shrink-0 items-center border-b border-border px-3">
         <span className="flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted-2">
@@ -191,6 +197,16 @@ export function FileTreePanel() {
         >
           <RefreshCw className="size-3.5" />
         </button>
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-foreground"
+            title="Collapse explorer (Ctrl+B)"
+            aria-label="Collapse explorer"
+          >
+            <PanelLeftClose className="size-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Big action buttons */}

@@ -74,6 +74,20 @@ export const api = {
     rename: (id: string, title: string) => req<{ ok: true }>(`/api/chats/${id}`, { method: "PATCH", body: JSON.stringify({ title }) }),
     remove: (id: string) => req<{ ok: true }>(`/api/chats/${id}`, { method: "DELETE" }),
   },
+  vibes: {
+    progress: () =>
+      req<{
+        stages: Record<
+          string,
+          { done: boolean; fileId: string; updatedAt: string; fileName?: string; projectName?: string }
+        >;
+      }>("/api/vibes"),
+    saveDoc: (stage: string, fields: Record<string, string>) =>
+      req<{ ok: true; fileName: string; projectName: string }>("/api/vibes/save-doc", {
+        method: "POST",
+        body: JSON.stringify({ stage, fields }),
+      }),
+  },
   messages: {
     list: (chatId: string) => req<{ messages: MessageDTO[] }>(`/api/chats/${chatId}/messages`),
     add: (chatId: string, role: "user" | "assistant" | "system", content: string) =>

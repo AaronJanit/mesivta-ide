@@ -32,10 +32,16 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
 const STORAGE_KEY = "web-ide:guide:lastLessonId";
 
 interface CodingGuideProps {
-  onClose: () => void;
+  onClose?: () => void;
+  /**
+   * Compact (embeddable) mode — used inside the IDE's right dock. Swaps the
+   * wide TOC sidebar for a search + jump-to-lesson header row so the guide
+   * fits a narrow panel. Full TOC mode is used on the standalone /docs page.
+   */
+  compact?: boolean;
 }
 
-export function CodingGuide({ onClose }: CodingGuideProps) {
+export function CodingGuide({ onClose, compact = false }: CodingGuideProps) {
   const [activeLessonId, setActiveLessonId] = useState<string>(() => {
     if (typeof window === "undefined") return FLAT_LESSONS[0].id;
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -129,10 +135,44 @@ export function CodingGuide({ onClose }: CodingGuideProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-editor text-foreground">
+    <div className="relative flex h-full flex-col bg-editor text-foreground">
       {/* Body: TOC + content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sticky Table of Contents */}
+        {/* Compact (embedded) header: search + jump-to-lesson dropdown */}
+        {compact && (
+          <div className="absolute inset-x-0 top-0 z-10 flex shrink-0 items-center gap-2 border-b border-border bg-panel px-3 py-2">
+            <div className="flex min-w-0 flex-1 items-center">
+              <Search className="size-3.5 shrink-0 text-muted-2" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search lessons…"
+                className="ml-2 w-full bg-transparent text-xs text-foreground placeholder:text-muted-2 focus:outline-none"
+                aria-label="Search lessons"
+              />
+            </div>
+            <select
+              value={activeLessonId}
+              onChange={(e) => goTo(e.target.value)}
+              className="max-w-[46%] shrink-0 truncate rounded border border-border bg-editor px-1.5 py-1 text-[11px] text-foreground"
+              aria-label="Jump to lesson"
+            >
+              {GUIDE_SECTIONS.map((section) => (
+                <optgroup key={section.id} label={section.title}>
+                  {section.lessons.map((lesson) => (
+                    <option key={lesson.id} value={lesson.id}>
+                      {lesson.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Sticky Table of Contents (full-page mode only) */}
+        {!compact && (
         <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-panel md:flex">
           <div className="flex h-9 shrink-0 items-center border-b border-border px-3">
             <Search className="size-3.5 text-muted-2" />
@@ -207,8 +247,10 @@ export function CodingGuide({ onClose }: CodingGuideProps) {
             )}
           </nav>
         </aside>
+        )}
 
-        {/* Mobile section dropdown */}
+        {/* Mobile section dropdown (full-page mode only) */}
+        {!compact && (
         <div className="border-b border-border bg-panel px-3 py-2 md:hidden">
           <label className="text-[11px] uppercase tracking-wide text-muted-2">Jump to lesson</label>
           <select
@@ -227,11 +269,12 @@ export function CodingGuide({ onClose }: CodingGuideProps) {
             ))}
           </select>
         </div>
+        )}
 
         {/* Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <div ref={scrollRef} className="flex-1 overflow-auto">
-            <div className="mx-auto max-w-3xl px-6 py-8">
+            <div className={cn("mx-auto max-w-3xl px-6 py-8", compact && "px-5 pt-14")}>
               {FLAT_LESSONS.map((lesson) => (
                 <LessonView
                   key={lesson.id}

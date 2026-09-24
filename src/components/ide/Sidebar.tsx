@@ -6,13 +6,15 @@ import { FileTreePanel } from "@/components/explorer/FileTreePanel";
 interface SidebarProps {
   active: ActivityView;
   onSelect: (view: ActivityView) => void;
+  /** Called when the user clicks the collapse button in the explorer header. */
+  onCollapseExplorer?: () => void;
 }
 
-export function Sidebar({ active, onSelect }: SidebarProps) {
+export function Sidebar({ active, onSelect, onCollapseExplorer }: SidebarProps) {
   function renderContent() {
     switch (active) {
       case "explorer":
-        return <FileTreePanel />;
+        return <FileTreePanel onCollapse={onCollapseExplorer} />;
       case "debug":
         // When Debug is active, Shell renders the DebugPanel in the editor
         // region instead of the Sidebar column, so this case is unreachable.

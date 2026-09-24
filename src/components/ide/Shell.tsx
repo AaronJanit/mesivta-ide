@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
-import { useProjectStore } from "@/stores/useProjectStore";
 import { useTerminalStore } from "@/stores/useTerminalStore";
 import { Toolbar } from "./Toolbar";
-import { ProjectSwitcher } from "./ProjectSwitcher";
 import { Sidebar } from "./Sidebar";
 import { ActivityBar } from "./ActivityBar";
 import { EditorArea } from "@/components/editor/EditorArea";
-import { AssistantPanel } from "@/components/ai/AssistantPanel";
+import { RightDock } from "./RightDock";
 import { DebugPanel } from "@/components/debug/DebugPanel";
 import { CodingGuide } from "@/components/guide/CodingGuide";
 import { BottomPanel } from "./BottomPanel";
@@ -17,12 +15,34 @@ import { useBackgroundDebugScan } from "@/hooks/useBackgroundDebugScan";
 import type { ActivityView } from "./ActivityBar";
 
 export function Shell({ onLogout }: { onLogout: () => void }) {
-  const current = useProjectStore((s) => s.current);
   const showBottomPanel = useTerminalStore((s) => s.showPanel);
   const [aiChatVisible, setAiChatVisible] = useState(true);
+  const [explorerVisible, setExplorerVisible] = useState(true);
   const [activityView, setActivityView] = useState<ActivityView>("explorer");
   const showDebug = activityView === "debug";
   const showGuide = activityView === "guide";
+
+  // Ctrl+B toggles the explorer sidebar, VS Code style.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setExplorerVisible((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Clicking the Explorer activity-bar icon re-opens the sidebar (and selects
+  // the explorer view) when it's collapsed.
+  const handleActivitySelect = useCallback(
+    (view: ActivityView) => {
+      if (view === "explorer") setExplorerVisible(true);
+      setActivityView(view);
+    },
+    [],
+  );
 
   // Keep the debug store's scan result fresh in the background so the
   // pulsing badge on the Debug activity-bar icon reflects live state.
@@ -34,16 +54,10 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
       <Toolbar
         aiChatVisible={aiChatVisible}
         onToggleAiChat={() => setAiChatVisible((v) => !v)}
+        explorerVisible={explorerVisible}
+        onToggleExplorer={() => setExplorerVisible((v) => !v)}
         onLogout={onLogout}
       />
-
-      {/* Project bar — 36px, minimal */}
-      <header className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-panel px-3">
-        <ProjectSwitcher />
-        <div className="h-4 w-px bg-border" />
-        <span className="text-xs text-muted-2">{current ? current.name : ""}</span>
-        <div className="flex-1" />
-      </header>
 
       {/* Main layout */}
       <div className="flex-1 overflow-hidden">
@@ -51,7 +65,7 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
           // Guide view: only the icon activity bar + the guide filling the
           // rest. No file-tree sidebar, no AI chatbot panel, no resizers.
           <div className="flex h-full">
-            <ActivityBar active={activityView} onSelect={setActivityView} />
+            <ActivityBar active={activityView} onSelect={handleActivitySelect} />
             <div className="h-full flex-1 overflow-hidden">
               <CodingGuide onClose={() => setActivityView("explorer")} />
             </div>
@@ -60,7 +74,7 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
           // Debug view: ActivityBar + DebugPanel filling the width up to the
           // AI chatbot. No file-tree sidebar column, no resizer on the left.
           <div className="flex h-full">
-            <ActivityBar active={activityView} onSelect={setActivityView} />
+            <ActivityBar active={activityView} onSelect={handleActivitySelect} />
             <PanelGroup orientation="horizontal" id="ide-debug" className="flex-1">
               <Panel minSize="30%">
                 <DebugPanel onClose={() => setActivityView("explorer")} />
@@ -69,7 +83,7 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
                 <>
                   <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
                   <Panel defaultSize="28%" minSize="18%" maxSize="45%">
-                    <AssistantPanel />
+                    <RightDock />
                   </Panel>
                 </>
               )}
@@ -77,12 +91,23 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : (
           <div className="flex h-full">
-            <ActivityBar active={activityView} onSelect={setActivityView} />
+            <ActivityBar active={activityView} onSelect={handleActivitySelect} />
             <PanelGroup orientation="horizontal" id="ide-main" className="flex-1">
-              <Panel defaultSize="20%" minSize="14%" maxSize="35%">
-                <Sidebar active={activityView} onSelect={setActivityView} />
-              </Panel>
-              <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
+              {explorerVisible && (
+                <>
+                  <Panel
+                    id="explorer-panel"
+                    defaultSize="20%"
+                    minSize="14%"
+                    maxSize="35%"
+                    collapsible
+                    collapsedSize="0px"
+                  >
+                    <Sidebar active={activityView} onSelect={handleActivitySelect} onCollapseExplorer={() => setExplorerVisible(false)} />
+                  </Panel>
+                  <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
+                </>
+              )}
               <Panel minSize="30%">
                 {/* Vertical split: editor on top, terminal/preview on bottom */}
                 <PanelGroup orientation="vertical" id="ide-editor-split">
@@ -103,7 +128,7 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
                 <>
                   <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-accent/50" />
                   <Panel defaultSize="28%" minSize="18%" maxSize="45%">
-                    <AssistantPanel />
+                    <RightDock />
                   </Panel>
                 </>
               )}

@@ -9,8 +9,8 @@
   --background: 240 10% 7%;          /* #111116 app bg */
   --panel: 240 8% 10%;                /* #1a1a1f sidebar/panel bg */
   --panel-2: 240 8% 13%;             /* #212126 active/row hover */
-  --border: 220 10% 18%;            /* #2a2d33 subtle dividers */
-  --border-strong: 220 10% 26%;
+  --border: 220 12% 28%;            /* #41454f panel/section dividers */
+  --border-strong: 220 12% 38%;
 
   /* Text */
   --foreground: 210 20% 92%;        /* #e6e9ef main */
@@ -139,6 +139,29 @@ body {
   15%  { opacity: 1; }
   75%  { opacity: 1; }
   100% { opacity: 1; }
+}
+
+/* Ambient page helpers (sign-in + dashboard) */
+.ambient-grid {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 35%, black 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 35%, black 30%, transparent 78%);
+}
+
+@keyframes signInCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes signInShake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(2px); }
 }
 
 /* Focus ring */
