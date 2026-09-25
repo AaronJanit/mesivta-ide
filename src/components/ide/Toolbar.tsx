@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, ExternalLink, LayoutDashboard, FileArchive, Download } from "lucide-react";
+import { ChevronDown, Eye, Undo2, Redo2, LogOut, Sun, Moon, LayoutDashboard, FileArchive, Download, FileUp } from "lucide-react";
 import { getEditor, useEditorBridge } from "@/lib/editorBridge";
 import { useTheme } from "@/hooks/useTheme";
 import { ZipUploadModal } from "./ZipUploadModal";
 import { ZipExportModal } from "./ZipExportModal";
+import { FileUploadModal } from "./FileUploadModal";
 
 interface ToolbarProps {
   aiChatVisible: boolean;
@@ -19,6 +20,7 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
   const [viewOpen, setViewOpen] = useState(false);
   const [zipOpen, setZipOpen] = useState(false);
   const [zipExportOpen, setZipExportOpen] = useState(false);
+  const [fileUploadOpen, setFileUploadOpen] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const { mode, toggle } = useTheme();
   const isLight = mode === "light";
@@ -74,8 +76,17 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
 
       <div className="mx-2 h-4 w-px bg-border" />
 
-      {/* Upload ZIP / Download ZIP */}
+      {/* Upload files / ZIP / Download ZIP */}
       <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background/60 p-0.5">
+        <button
+          type="button"
+          onClick={() => setFileUploadOpen(true)}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-panel-2 hover:text-foreground"
+          title="Upload coding files into the current project"
+        >
+          <FileUp className="size-3.5" />
+          <span>Upload files</span>
+        </button>
         <button
           type="button"
           onClick={() => setZipOpen(true)}
@@ -83,7 +94,7 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
           title="Upload a .zip of files into a project"
         >
           <FileArchive className="size-3.5" />
-          <span>Upload ZIP</span>
+          <span>ZIP</span>
         </button>
         <button
           type="button"
@@ -170,26 +181,6 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
 
       <div className="flex-1" />
 
-      {/* HackClub Toolbox — opens in new tab */}
-      <a
-        href="https://toolbox.hackclub.com/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 rounded px-2 py-1 text-xs text-muted transition hover:bg-panel-2 hover:text-foreground"
-        title="Open HackClub Toolbox (new tab)"
-        style={{ fontFamily: '"Phantom Sans", system-ui, sans-serif' }}
-      >
-        <img
-          src="https://assets.hackclub.com/icon-rounded.svg"
-          alt="HackClub"
-          width={20}
-          height={20}
-          className="size-5 shrink-0"
-        />
-        <span className="font-medium tracking-tight">HackClub Toolbox</span>
-        <ExternalLink className="size-3 opacity-70" />
-      </a>
-
       <div className="mx-2 h-4 w-px bg-border" />
 
       <button
@@ -203,6 +194,7 @@ export function Toolbar({ aiChatVisible, onToggleAiChat, explorerVisible, onTogg
 
       {zipOpen && <ZipUploadModal onClose={() => setZipOpen(false)} />}
       {zipExportOpen && <ZipExportModal onClose={() => setZipExportOpen(false)} />}
+      {fileUploadOpen && <FileUploadModal onClose={() => setFileUploadOpen(false)} />}
     </div>
   );
 }

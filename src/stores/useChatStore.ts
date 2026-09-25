@@ -20,6 +20,8 @@ interface ChatState {
   /** If the active chat is a draft, persist it to the DB and return the real id. */
   ensureChatPersisted: (projectId: string) => Promise<string>;
   appendMessage: (msg: MessageDTO) => void;
+  /** Remove all local messages created at/after the given ISO timestamp. */
+  truncateFrom: (fromIso: string) => void;
   appendAssistantStreaming: (chatId: string, partial: string) => void;
   finalizeStreaming: (chatId: string) => void;
   clear: () => void;
@@ -101,6 +103,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
   appendMessage: (msg) => set({ messages: [...get().messages, msg] }),
+  truncateFrom: (fromIso) =>
+    set({ messages: get().messages.filter((m) => m.created_at < fromIso) }),
   appendAssistantStreaming: (chatId, partial) => {
     if (get().activeChatId !== chatId) return;
     const msgs = get().messages;

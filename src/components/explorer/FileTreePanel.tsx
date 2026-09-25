@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { FilePlus, FolderPlus, RefreshCw, Upload, ChevronDown, ChevronRight, Pencil, Trash2, Check, X, PanelLeftClose } from "lucide-react";
+import { File, FileCode, FileCog, FileJson, FilePlus, FileText, Folder, FolderOpen, FolderPlus, RefreshCw, Upload, ChevronDown, ChevronRight, Pencil, Trash2, Check, X, PanelLeftClose } from "lucide-react";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -17,6 +17,16 @@ interface CreateInputState {
   type: "file" | "folder";
   name: string;
 }
+
+const FILE_ICONS = {
+  file: File,
+  "file-code": FileCode,
+  "file-json": FileJson,
+  "file-text": FileText,
+  image: File,
+  "file-cog": FileCog,
+  braces: FileCode,
+} as const;
 
 export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
   const current = useProjectStore((s) => s.current);
@@ -180,19 +190,19 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
       onContextMenu={(e) => onContextMenu(e, null)}
     >
       {/* Project switcher row */}
-      <div className="flex h-9 shrink-0 items-center border-b border-border px-2 py-1">
+      <div className="flex h-10 shrink-0 items-center border-b border-border bg-panel/80 px-2.5 py-1">
         <ProjectSwitcher />
       </div>
 
       {/* Header */}
-      <div className="flex h-9 shrink-0 items-center border-b border-border px-3">
-        <span className="flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted-2">
+      <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
+        <span className="flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-2">
           Explorer
         </span>
         <button
           onClick={refresh}
           disabled={!current}
-          className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-foreground disabled:opacity-40"
+          className="rounded-md p-1.5 text-muted transition hover:bg-panel-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           title="Refresh"
         >
           <RefreshCw className="size-3.5" />
@@ -200,7 +210,7 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
         {onCollapse && (
           <button
             onClick={onCollapse}
-            className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-foreground"
+            className="rounded-md p-1.5 text-muted transition hover:bg-panel-2 hover:text-foreground"
             title="Collapse explorer (Ctrl+B)"
             aria-label="Collapse explorer"
           >
@@ -211,17 +221,19 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
 
       {/* Big action buttons */}
       {current && (
-        <div className="flex shrink-0 gap-1.5 border-b border-border p-2">
+        <div className="flex shrink-0 gap-1.5 border-b border-border bg-background/20 p-2">
           <button
             onClick={() => startCreate(null, "root", "file")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-3 py-2 text-xs font-medium text-accent-fg transition hover:opacity-90"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent transition hover:border-accent/70 hover:bg-accent/20"
+            title="Create a new file"
           >
             <FilePlus className="size-4" />
             New File
           </button>
           <button
             onClick={() => startCreate(null, "root", "folder")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-panel-2 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-panel hover:border-accent/40"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-panel-2/70 px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:border-accent/40 hover:bg-panel-2"
+            title="Create a new folder"
           >
             <FolderPlus className="size-4" />
             New Folder
@@ -231,7 +243,7 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
 
       {/* Create input */}
       {creating && (
-        <div className="flex items-center gap-2 border-b border-border bg-panel-2 px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-border bg-accent/5 px-3 py-2">
           <span className="text-accent">
             {creating.type === "folder" ? <FolderPlus className="size-4" /> : <FilePlus className="size-4" />}
           </span>
@@ -244,12 +256,12 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
               if (e.key === "Escape") setCreating(null);
             }}
             placeholder={`${creating.type === "folder" ? "Folder" : "File"} name…`}
-            className="flex-1 rounded border border-accent/60 bg-background px-2 py-1.5 text-xs text-foreground outline-none"
+            className="flex-1 rounded-md border border-accent/50 bg-background px-2 py-1.5 text-xs text-foreground outline-none transition focus:border-accent focus:ring-1 focus:ring-accent/30"
           />
-          <button onClick={submitCreate} className="rounded bg-accent px-2 py-1.5 text-accent-fg hover:opacity-90" title="Confirm">
+          <button onClick={submitCreate} className="rounded-md bg-accent px-2 py-1.5 text-accent-fg transition hover:opacity-90" title="Confirm">
             <Check className="size-4" />
           </button>
-          <button onClick={() => setCreating(null)} className="rounded border border-border px-2 py-1.5 text-muted hover:bg-panel hover:text-foreground" title="Cancel">
+          <button onClick={() => setCreating(null)} className="rounded-md border border-border px-2 py-1.5 text-muted transition hover:bg-panel hover:text-foreground" title="Cancel">
             <X className="size-4" />
           </button>
         </div>
@@ -257,7 +269,7 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
 
       {/* Tree / Empty state / Drop zone */}
       <div
-        className={`flex-1 overflow-auto transition-colors ${dragOver ? "bg-accent/5" : ""}`}
+        className={`flex-1 overflow-auto transition-colors ${dragOver ? "bg-accent/10" : ""}`}
         onContextMenu={(e) => onContextMenu(e, null)}
       >
         {!current ? (
@@ -282,7 +294,7 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="py-1">
+          <div className="space-y-0.5 px-1.5 py-2">
             {tree.map((node) => (
               <FileTreeRow
                 key={node.id}
@@ -311,8 +323,8 @@ export function FileTreePanel({ onCollapse }: { onCollapse?: () => void }) {
 
       {/* Drag overlay */}
       {dragOver && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-accent/10">
-          <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-accent/50 bg-panel/90 px-8 py-6">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-accent/10 backdrop-blur-[1px]">
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-accent/60 bg-panel/95 px-8 py-6 shadow-pop">
             <Upload className="size-8 text-accent" />
             <span className="text-sm font-medium text-foreground">Drop files to upload</span>
           </div>
@@ -369,6 +381,7 @@ function FileTreeRow(props: FileTreeRowProps) {
   const isRenaming = props.renamingId === data.id;
   const isConfirmingDelete = props.confirmDeleteId === data.id;
   const iconSpec = iconForFile(data.name);
+  const FileIcon = FILE_ICONS[iconSpec.icon];
   const [showActions, setShowActions] = useState(false);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -387,8 +400,8 @@ function FileTreeRow(props: FileTreeRowProps) {
           else props.onOpenFile(data);
         }}
         onContextMenu={(e) => props.onContextMenu(e, data)}
-        className={`group flex cursor-pointer items-center gap-1.5 py-1.5 pr-2 text-xs ${
-          isActive ? "bg-accent-soft text-foreground" : "text-foreground/90 hover:bg-panel-2/60"
+        className={`group flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md py-1 pr-2 text-xs transition-colors ${
+          isActive ? "bg-accent-soft text-foreground shadow-[inset_2px_0_0_hsl(var(--accent))]" : "text-foreground/90 hover:bg-panel-2/70"
         }`}
         style={{ paddingLeft: `${props.depth * 16 + 8}px` }}
         title={data.name}
@@ -402,9 +415,9 @@ function FileTreeRow(props: FileTreeRowProps) {
 
         {/* Icon */}
         {isFolder ? (
-          <FolderPlus className="size-4 shrink-0 text-accent" />
+          isOpen ? <FolderOpen className="size-4 shrink-0 text-accent" /> : <Folder className="size-4 shrink-0 text-accent" />
         ) : (
-          <FilePlus className={`size-4 shrink-0 ${iconSpec.color ?? "text-muted"}`} />
+          <FileIcon className={`size-4 shrink-0 ${iconSpec.color ?? "text-muted"}`} />
         )}
 
         {/* Name or rename input */}
@@ -419,7 +432,7 @@ function FileTreeRow(props: FileTreeRowProps) {
             }}
             onBlur={props.onSubmitRename}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-accent/60 bg-background px-1.5 py-0.5 text-xs outline-none"
+            className="flex-1 rounded-md border border-accent/60 bg-background px-1.5 py-1 text-xs outline-none focus:ring-1 focus:ring-accent/30"
           />
         ) : (
           <span className="flex-1 truncate">{data.name}</span>
@@ -428,19 +441,19 @@ function FileTreeRow(props: FileTreeRowProps) {
         {/* Inline actions */}
         {isConfirmingDelete ? (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <button onClick={props.onExecuteDelete} className="rounded bg-danger px-1.5 py-0.5 text-[10px] font-medium text-white hover:opacity-90" title="Confirm">
+            <button onClick={props.onExecuteDelete} className="rounded-md bg-danger px-1.5 py-1 text-[10px] font-medium text-white transition hover:opacity-90" title="Confirm">
               <Check className="size-3" />
             </button>
-            <button onClick={props.onCancelDelete} className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted hover:bg-panel hover:text-foreground" title="Cancel">
+            <button onClick={props.onCancelDelete} className="rounded-md border border-border px-1.5 py-1 text-[10px] text-muted transition hover:bg-panel hover:text-foreground" title="Cancel">
               <X className="size-3" />
             </button>
           </div>
         ) : isRenaming ? (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <button onClick={props.onSubmitRename} className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-fg hover:opacity-90" title="Confirm">
+            <button onClick={props.onSubmitRename} className="rounded-md bg-accent px-1.5 py-1 text-[10px] font-medium text-accent-fg transition hover:opacity-90" title="Confirm">
               <Check className="size-3" />
             </button>
-            <button onClick={props.onCancelRename} className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted hover:bg-panel hover:text-foreground" title="Cancel">
+            <button onClick={props.onCancelRename} className="rounded-md border border-border px-1.5 py-1 text-[10px] text-muted transition hover:bg-panel hover:text-foreground" title="Cancel">
               <X className="size-3" />
             </button>
           </div>

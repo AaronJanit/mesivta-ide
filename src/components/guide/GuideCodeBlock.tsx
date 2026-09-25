@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import hljs from "highlight.js";
 import { Check, Copy } from "lucide-react";
 import type { GuideLanguage } from "./guideContent";
@@ -18,14 +18,15 @@ const LANG_LABEL: Record<GuideLanguage, string> = {
 };
 
 export function GuideCodeBlock({ code, language }: GuideCodeBlockProps) {
-  const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (codeRef.current) {
-      codeRef.current.removeAttribute("data-highlighted");
-      codeRef.current.className = `language-${language}`;
-      hljs.highlightElement(codeRef.current);
+  // Highlight via the pure string API (never touches the DOM), so React owns
+  // the markup and there is no unescaped-HTML warning on re-runs.
+  const highlighted = useMemo(() => {
+    try {
+      return hljs.highlight(code, { language, ignoreIllegals: true }).value;
+    } catch {
+      return code; // fall back to plain (React-escaped) text
     }
   }, [code, language]);
 
@@ -68,11 +69,9 @@ export function GuideCodeBlock({ code, language }: GuideCodeBlockProps) {
       </div>
       <pre className="overflow-auto p-3 text-[12.5px] leading-relaxed">
         <code
-          ref={codeRef}
           className={`language-${language}`}
-        >
-          {code}
-        </code>
+          dangerouslySetInnerHTML={{ __html: highlighted }}
+        />
       </pre>
     </div>
   );

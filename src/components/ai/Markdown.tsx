@@ -14,7 +14,7 @@ export function Markdown({ content }: Props) {
     <div className="prose-invert max-w-none text-[13px] leading-relaxed text-foreground/90">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
+        rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true }]]}
         components={{
           // fenced code blocks — render via CodeBlock with copy
           pre({ children }) {

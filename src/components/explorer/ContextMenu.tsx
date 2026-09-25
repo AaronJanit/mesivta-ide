@@ -38,14 +38,14 @@ export function ContextMenu({ state, onClose, onCreateFile, onCreateFolder, onRe
   return (
     <div
       ref={ref}
-      className="fixed z-[100] w-56 overflow-hidden rounded-lg border border-border bg-panel py-1.5 shadow-pop"
+      className="fixed z-[100] w-56 overflow-hidden rounded-xl border border-border bg-panel/95 py-1.5 shadow-pop backdrop-blur-md"
       style={{ left: x, top: y }}
     >
       {node && (
         <>
           <MenuItem icon={<Pencil className="size-4" />} label="Rename" onClick={() => { onRename(node); onClose(); }} />
           <MenuItem icon={<Trash2 className="size-4" />} label="Delete" danger onClick={() => { onDelete(node); onClose(); }} />
-          <div className="my-1.5 h-px bg-border" />
+          <div className="my-1.5 h-px bg-border/80" />
         </>
       )}
       <MenuItem
@@ -66,7 +66,7 @@ function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; lab
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium hover:bg-panel-2 ${
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-panel-2 ${
         danger ? "text-danger hover:bg-danger/10" : "text-foreground"
       }`}
     >

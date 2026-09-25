@@ -92,5 +92,8 @@ export const api = {
     list: (chatId: string) => req<{ messages: MessageDTO[] }>(`/api/chats/${chatId}/messages`),
     add: (chatId: string, role: "user" | "assistant" | "system", content: string) =>
       req<{ message: MessageDTO }>(`/api/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ role, content }) }),
+    /** Delete every message in the chat from the given ISO timestamp (inclusive). */
+    deleteFrom: (chatId: string, fromIso: string) =>
+      req<{ ok: true }>(`/api/chats/${chatId}/messages`, { method: "DELETE", body: JSON.stringify({ from: fromIso }) }),
   },
 };

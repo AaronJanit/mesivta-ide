@@ -2,10 +2,11 @@
 
 import { useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { X, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Sparkles, Globe } from "lucide-react";
+import { X, File, FileCode, FileJson, FileText, Image as ImageIcon, FileCog, Braces, Sparkles, Globe, Download } from "lucide-react";
 import { useEditorStore, type EditorTab, WELCOME_TAB_ID, PREVIEW_TAB_ID } from "@/stores/useEditorStore";
 import { useFileStore } from "@/stores/useFileStore";
 import { iconForFile } from "@/lib/fileIcons";
+import { downloadBlob } from "@/lib/exportZip";
 import { WelcomePanel } from "./WelcomePanel";
 import { LivePreview } from "@/components/preview/LivePreview";
 import { MarkdownPreview } from "./MarkdownPreview";
@@ -58,19 +59,41 @@ export function EditorArea() {
 
   const activeTab = tabs.find((t) => t.fileId === activeFileId) ?? null;
 
+  // Download the active file's live content (not the last-saved store copy).
+  const handleDownload = useCallback(() => {
+    if (!activeTab || activeTab.isWelcome || activeTab.isPreview) return;
+    const blob = new Blob([activeTab.content], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, activeTab.name);
+  }, [activeTab]);
+
   return (
     <div data-tour="ide-editor" className="flex h-full flex-col bg-editor">
       {/* Tab strip */}
-      <div className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-border bg-panel">
-        {tabs.map((t) => (
-          <Tab
-            key={t.fileId}
-            tab={t}
-            active={t.fileId === activeFileId}
-            onClick={() => setActive(t.fileId)}
-            onClose={() => close(t.fileId)}
-          />
-        ))}
+      <div className="flex h-9 shrink-0 items-stretch border-b border-border bg-panel">
+        <div className="flex min-w-0 flex-1 items-stretch overflow-x-auto">
+          {tabs.map((t) => (
+            <Tab
+              key={t.fileId}
+              tab={t}
+              active={t.fileId === activeFileId}
+              onClick={() => setActive(t.fileId)}
+              onClose={() => close(t.fileId)}
+            />
+          ))}
+        </div>
+        {activeTab && !activeTab.isWelcome && !activeTab.isPreview && (
+          <div className="flex shrink-0 items-center border-l border-border px-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium text-muted transition hover:bg-panel-2 hover:text-foreground"
+              title={`Download ${activeTab.name}`}
+            >
+              <Download className="size-3.5" />
+              <span>Download</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Editor OR welcome OR preview — full height, swapped by active tab */}

@@ -47,9 +47,9 @@ export function LivePreview() {
     );
   }
 
-  // URL format: /api/serve/{projectId}/
-  // The catch-all route will serve index.html when no file path is given
-  const previewUrl = `/api/serve/${project.id}`;
+  // Keep the trailing slash so relative asset URLs in index.html resolve
+  // beneath this project's virtual server path.
+  const previewUrl = `/api/serve/${project.id}/`;
 
   // For display, show simulated localhost URL
   const displayUrl = `http://localhost:${serverPort}`;

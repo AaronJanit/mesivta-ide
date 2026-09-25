@@ -102,3 +102,24 @@ export async function createMessage(
   await client().from("chats").update({}).eq("id", chatId);
   return data as Message;
 }
+
+/**
+ * Delete every message in a chat created at or after `fromIso` (inclusive).
+ * Used by "edit last prompt": the old prompt and its response are removed so
+ * the edited prompt can be re-sent cleanly.
+ */
+export async function deleteMessagesFrom(userId: string, chatId: string, fromIso: string): Promise<void> {
+  const { data: chat } = await client()
+    .from("chats")
+    .select("project_id")
+    .eq("id", chatId)
+    .maybeSingle();
+  if (!chat) throw new Error("Chat not found");
+  if (!(await ownProject(userId, chat.project_id as string))) throw new Error("Project not found");
+  const { error } = await client()
+    .from("messages")
+    .delete()
+    .eq("chat_id", chatId)
+    .gte("created_at", fromIso);
+  if (error) throw error;
+}

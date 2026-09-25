@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Plus, MessageSquare, Trash2, ChevronLeft, Send, Square, Search, Check, Pencil, Clock, Code2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2, ChevronLeft, Send, Square, Search, Check, Pencil, Clock, Code2, X, RotateCcw, Paperclip } from "lucide-react";
 import { useChatStore, DRAFT_CHAT_ID } from "@/stores/useChatStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useFileStore } from "@/stores/useFileStore";
+import { api } from "@/lib/api/client";
+import { cn } from "@/lib/cn";
+import { FileContextModal } from "./FileContextModal";
 import { useStreamChat, type ActiveFileContext } from "@/hooks/useStreamChat";
+import { useEditorBridge, type EditorSelection } from "@/lib/editorBridge";
 import type { FileDTO } from "@/lib/api/client";
 import { Markdown } from "./Markdown";
 
@@ -42,15 +46,26 @@ export function AssistantPanel() {
   const tabs = useEditorStore((s) => s.tabs);
   const activeFileId = useEditorStore((s) => s.activeFileId);
   const tree = useFileStore((s) => s.tree);
+  const findNode = useFileStore((s) => s.findNode);
   const [input, setInput] = useState("");
   const [viewMode, setViewMode] = useState<"conversation" | "history">("conversation");
   const [search, setSearch] = useState("");
   const [sending, setSending] = useState(false);
   // ── Rate limiting ─────────────────────────────────────────────────────
-  // Users must wait RATE_LIMIT_MS between prompts to the AI.
+  // A cooldown starts only after every PROMPTS_PER_COOLDOWN prompts, giving
+  // users a burst of prompts before the wait kicks in.
   const RATE_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
+  const PROMPTS_PER_COOLDOWN = 5;
   const [lastSentAt, setLastSentAt] = useState(0);
+  const [promptsSinceCooldown, setPromptsSinceCooldown] = useState(0);
   const [now, setNow] = useState(0);
+  /** When editing: the created_at of the user prompt being re-sent. */
+  const [editingFrom, setEditingFrom] = useState<string | null>(null);
+  /** File ids attached as context for the next message. */
+  const [attachedIds, setAttachedIds] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  /** Live selection in the editor — shown as a badge, auto-attached on send. */
+  const editorSelection = useEditorBridge((s) => s.selection);
   // Tick every second so the countdown stays live while rate-limited.
   useEffect(() => {
     const remaining = lastSentAt ? RATE_LIMIT_MS - (Date.now() - lastSentAt) : 0;
@@ -89,11 +104,35 @@ export function AssistantPanel() {
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
+  /** The newest user message in the current chat. */
+  const lastUserMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i];
+    }
+    return null;
+  }, [messages]);
+
+  /** Begin editing the most recent prompt: load it into the composer and
+   *  (for persisted chats) drop it + its response from the DB on submit. */
+  function startEditLast() {
+    if (!lastUserMessage || sending) return;
+    setInput(lastUserMessage.content);
+    setEditingFrom(lastUserMessage.created_at);
+    inputRef.current?.focus();
+  }
+
+  function cancelEdit() {
+    setEditingFrom(null);
+    setInput("");
+  }
+
   async function submit() {
     const content = input.trim();
     if (!content || !current || !activeChatId || sending) return;
+    const editing = editingFrom;
     setInput("");
     setSending(true);
+    setEditingFrom(null);
     // Sending a new message: jump to the bottom so the user sees the response.
     stickToBottomRef.current = true;
 
@@ -109,6 +148,20 @@ export function AssistantPanel() {
       }
     }
 
+    // Editing a previous prompt: remove it and everything after it (its old
+    // response) locally + in the DB, so the edited prompt is re-sent cleanly.
+    if (editing) {
+      // Optimistic local truncation first, using the same timestamp rule.
+      truncateFrom(editing);
+      try {
+        if (chatId !== DRAFT_CHAT_ID) {
+          await api.messages.deleteFrom(chatId, editing);
+        }
+      } catch {
+        // Non-fatal: local view is already correct; remote cleanup failed.
+      }
+    }
+
     // optimistic: show user msg immediately
     appendMessage({
       id: `local-${Date.now()}`,
@@ -121,6 +174,7 @@ export function AssistantPanel() {
     // gather history (exclude the just-added local msg)
     const history = messages
       .filter((m) => !m.id.startsWith("local-"))
+      .filter((m) => !editing || m.created_at < editing)
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
     // Build file context from editor tabs so the AI sees actual file contents.
@@ -138,23 +192,49 @@ export function AssistantPanel() {
       .filter((t) => t.fileId !== activeFileId)
       .map(toCtx)
       .slice(0, 5);
+    // Explicitly attached files (from the + picker) — high priority context.
+    const attached = attachedIds
+      .map((id) => findNode(id))
+      .filter((n): n is NonNullable<typeof n> => !!n && n.type === "file")
+      .map((n) => toCtx({ fileId: n.id, name: n.name, content: n.content ?? "", language: "plaintext" }));
+
+    // Code selected in the editor at send time — highest priority context.
+    const sel = editorSelection;
+    const selectedCtx: ActiveFileContext | null =
+      sel && sel.text.trim().length > 0
+        ? {
+            name: sel.fileName,
+            path: `${sel.fileName}:${sel.startLine}-${sel.endLine}`,
+            language: activeTab?.language ?? "plaintext",
+            content: sel.text,
+          }
+        : null;
+
+    const seen = new Set<string>();
+    const dedupe = (list: typeof openTabs) => list.filter((f) => !seen.has(f.path) && seen.add(f.path));
+    const mergedOpenTabs = [
+      ...(selectedCtx ? [selectedCtx] : []),
+      ...dedupe(attached),
+      ...openTabs,
+    ];
 
     await send(
-      { chatId, projectId: current.id, content, history, activeFile, openTabs },
+      { chatId, projectId: current.id, content, history, activeFile, openTabs: mergedOpenTabs },
       {
         onDelta: (full) => appendAssistantStreaming(chatId, full),
         onDone: (_full) => {
           finalizeStreaming(chatId);
           setSending(false);
-          // Start the rate-limit cooldown after the AI response completes.
-          setLastSentAt(Date.now());
+          setAttachedIds([]); // attachments are one-shot
+          // Count prompts; only start the cooldown after every Nth prompt.
+          bumpPromptCount();
           setNow(Date.now());
         },
         onError: (err) => {
           appendAssistantStreaming(chatId, `⚠️ ${err}`);
           finalizeStreaming(chatId);
           setSending(false);
-          setLastSentAt(Date.now());
+          bumpPromptCount();
           setNow(Date.now());
         },
       },
@@ -167,6 +247,21 @@ export function AssistantPanel() {
       submit();
     }
   }
+
+  /** Count a completed prompt; every Nth one starts the cooldown. */
+  function bumpPromptCount() {
+    setPromptsSinceCooldown((count) => {
+      const next = count + 1;
+      if (next >= PROMPTS_PER_COOLDOWN) {
+        setLastSentAt(Date.now());
+        return 0;
+      }
+      return next;
+    });
+  }
+
+  /** Destructure store actions once for use in callbacks below. */
+  const truncateFrom = useChatStore((s) => s.truncateFrom);
 
   if (!current) {
     return (
@@ -250,9 +345,29 @@ export function AssistantPanel() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {messages.map((m) => (
-                  <MessageItem key={m.id} role={m.role} content={m.content} />
-                ))}
+                {messages.map((m, i) => {
+                  const isLastUser =
+                    m.role === "user" &&
+                    !sending &&
+                    !editingFrom &&
+                    !messages.slice(i + 1).some((later) => later.role === "user");
+                  return (
+                    <div key={m.id} className="flex flex-col gap-1">
+                      <MessageItem role={m.role} content={m.content} />
+                      {isLastUser && (
+                        <button
+                          type="button"
+                          onClick={startEditLast}
+                          className="self-start inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-2 transition hover:bg-panel-2 hover:text-accent"
+                          title="Edit this prompt and re-send it"
+                        >
+                          <Pencil className="size-3" />
+                          Edit prompt
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -261,44 +376,154 @@ export function AssistantPanel() {
           {rateLimited ? (
             <RateLimitNotice remainingMs={remainingMs} />
           ) : (
-            <div className="shrink-0 border-t border-border p-2">
-              <div className="flex items-end gap-2 rounded-md border border-border bg-background px-2 py-1.5 focus-within:border-accent">
+            <div className="shrink-0 border-t border-border bg-panel p-2.5">
+              {editingFrom && !sending && (
+                <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent-soft/70 px-3 py-1.5 text-[11px] text-foreground">
+                  <span className="inline-flex items-center gap-1.5 font-medium">
+                    <Pencil className="size-3 text-accent" />
+                    Editing your last prompt — re-sends on submit
+                  </span>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-muted transition hover:bg-panel-2 hover:text-foreground"
+                    title="Cancel edit"
+                  >
+                    <X className="size-3" />
+                    Cancel
+                  </button>
+                </div>
+              )}
+              {attachedIds.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {attachedIds.map((id) => {
+                    const node = findNode(id);
+                    if (!node) return null;
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex max-w-[180px] items-center gap-1 rounded-md border border-accent/40 bg-accent-soft px-2 py-1 text-[11px] font-medium text-accent"
+                      >
+                        <Paperclip className="size-3 shrink-0" />
+                        <span className="truncate">{node.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachedIds((prev) => prev.filter((a) => a !== id))}
+                          aria-label={`Remove ${node.name}`}
+                          title="Remove attachment"
+                          className="rounded p-0.5 transition hover:bg-accent/25"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              {editorSelection && !sending && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Deselect in the editor (collapse selection to cursor) — the badge disappears.
+                    const editor = useEditorBridge.getState().editor as unknown as {
+                      setSelection?: (sel: unknown) => void;
+                    } | null;
+                    editor?.setSelection?.({ startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 });
+                  }}
+                  className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-md border border-accent/40 bg-accent-soft px-2 py-1 text-[11px] font-medium text-accent transition hover:brightness-105"
+                  title="Click to deselect (the selection is auto-attached to your next message)"
+                >
+                  <Code2 className="size-3 shrink-0" />
+                  <span className="truncate">
+                    Selected: {editorSelection.fileName} · lines {editorSelection.startLine}
+                    {editorSelection.endLine !== editorSelection.startLine ? `–${editorSelection.endLine}` : ""}
+                  </span>
+                  <X className="size-3 shrink-0" />
+                </button>
+              )}
+              <div
+                className={cn(
+                  "rounded-xl border border-border bg-background/70 shadow-sm transition-colors focus-within:border-accent/70 focus-within:bg-panel-2/40",
+                  editingFrom && !sending && "border-accent/60 ring-1 ring-[hsl(var(--accent)/0.3)]",
+                )}
+              >
                 <textarea
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
-                  placeholder="Message AI Assistant…  (Enter to send, Shift+Enter for newline)"
+                  placeholder="Ask about your code…"
                   rows={2}
-                  className="flex-1 resize-none bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-2"
+                  className="max-h-40 min-h-[2.6rem] w-full resize-none bg-transparent px-3 pb-1 pt-2.5 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-2"
                   disabled={sending}
                 />
-                {sending ? (
-                  <button
-                    onClick={() => {
-                      abort();
-                      setSending(false);
-                    }}
-                    className="flex items-center gap-1 rounded bg-panel-2 px-2 py-1 text-xs text-foreground hover:bg-border"
-                  >
-                    <Square className="size-3" />
-                    Stop
-                  </button>
-                ) : (
-                  <button
-                    onClick={submit}
-                    disabled={!input.trim()}
-                    className="flex items-center gap-1 rounded bg-accent px-2 py-1 text-xs font-medium text-accent-fg hover:opacity-90 disabled:opacity-40"
-                  >
-                    <Send className="size-3" />
-                    Send
-                  </button>
-                )}
+                <div className="flex items-center justify-between gap-2 px-2.5 pb-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPickerOpen(true)}
+                      disabled={sending}
+                      className="flex size-7 items-center justify-center rounded-lg border border-border bg-panel-2/70 text-muted transition hover:border-accent/50 hover:text-accent disabled:opacity-40"
+                      title="Attach files as context"
+                      aria-label="Attach files as context"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-2">
+                      <kbd className="rounded border border-border bg-panel-2 px-1 py-px font-sans text-[9px] font-medium text-muted">
+                        Enter
+                      </kbd>
+                      to send
+                      <kbd className="ml-1 rounded border border-border bg-panel-2 px-1 py-px font-sans text-[9px] font-medium text-muted">
+                        Shift
+                      </kbd>
+                      +
+                      <kbd className="rounded border border-border bg-panel-2 px-1 py-px font-sans text-[9px] font-medium text-muted">
+                        Enter
+                      </kbd>
+                      for a new line
+                    </span>
+                  </div>
+                  {sending ? (
+                    <button
+                      onClick={() => {
+                        abort();
+                        setSending(false);
+                      }}
+                      className="flex h-7 items-center gap-1.5 rounded-lg border border-border bg-panel-2 px-3 text-xs font-medium text-foreground transition hover:bg-border"
+                    >
+                      <Square className="size-3" />
+                      Stop
+                    </button>
+                  ) : (
+                    <button
+                      onClick={submit}
+                      disabled={!input.trim()}
+                      className={cn(
+                        "flex h-7 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition active:scale-[0.97]",
+                        input.trim()
+                          ? "bg-accent text-accent-fg shadow-[0_1px_8px_rgba(0,179,255,0.3)] hover:brightness-110"
+                          : "cursor-not-allowed bg-panel-2 text-muted-2",
+                      )}
+                    >
+                      {editingFrom ? <RotateCcw className="size-3" /> : <Send className="size-3" />}
+                      {editingFrom ? "Resend" : "Send"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </>
       )}
+
+      <FileContextModal
+        open={pickerOpen}
+        tree={tree}
+        selectedIds={attachedIds}
+        onConfirm={(ids) => setAttachedIds(ids)}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

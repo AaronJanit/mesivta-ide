@@ -11,10 +11,12 @@ import {
   Flame,
   GraduationCap,
   LayoutDashboard,
+  LogOut,
   Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const learningLinks = [
@@ -37,9 +39,16 @@ const learningLinks = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const loadUser = useAuthStore((s) => s.loadUser);
+  const logout = useAuthStore((s) => s.logout);
   const [showIntro, setShowIntro] = useState(true);
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   useEffect(() => {
     if (!user) void loadUser();
@@ -79,6 +88,15 @@ export default function DashboardPage() {
             </div>
           </Link>
           <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-panel-2/60 px-3 py-2 text-xs font-medium text-muted transition hover:border-border-strong hover:bg-panel-2 hover:text-foreground active:scale-[0.98]"
+            title="Sign out of Mesivta Code"
+          >
+            <LogOut className="size-3.5" />
+            Sign out
+          </button>
           <Link
             href="/ide"
             className="group inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-accent-fg shadow-[0_1px_10px_rgba(0,179,255,0.3)] transition hover:brightness-110 hover:shadow-[0_2px_14px_rgba(0,179,255,0.45)] active:scale-[0.98]"
